@@ -55,17 +55,19 @@ export default function LightControls({ files, values, onChange, showFinal, onTo
                 <div className="space-y-3">
                   {groups[group].map(f => (
                     <div key={f} className="flex items-center gap-3">
-                      <label className="text-xs flex-1">
+                      {/* Personalização: altere estilos das labels aqui (legibilidade e contraste) */}
+                      <label className="text-xs flex-1 text-neutral-100 text-shadow">
                         {sanitizeLabel(f)}
                       </label>
+                      {/* Slider: ajuste sensibilidade via 'step' e fallback via 'value' */}
                       <input
                         type="range"
                         min={0}
-                        max={10}
+                        max={100}
                         step={1}
-                        value={values[f] ?? 5}
-                        onChange={e => onChange(f, parseInt(e.target.value, 10))}
-                        className="w-32"
+                        value={values[f] ?? 50}
+                        onChange={e => onChange(f, parseFloat(e.target.value))}
+                        className="w-32 range-gray accent-gray-400"
                       />
                     </div>
                   ))}

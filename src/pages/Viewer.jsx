@@ -8,7 +8,8 @@ import * as THREE from 'three'
 
 export default function Viewer() {
   const [files, setFiles] = useState([])
-  const [values, setValues] = useState({}) // intensidade 0..10 por arquivo
+// Personalização: defina valores padrão por arquivo aqui (ex.: 5)
+const [values, setValues] = useState({}) // intensidade 0..10 por arquivo
   const [showFinal, setShowFinal] = useState(true)
   const [collapsed, setCollapsed] = useState(false)
 
@@ -44,13 +45,14 @@ export default function Viewer() {
         camera={{ position: [0, 0, 0.01], fov: 75 }}
         onCreated={(state) => {
           // Acúmulo em espaço linear para reduzir ruído em adição de camadas
-          state.gl.outputColorSpace = THREE.LinearSRGBColorSpace
-          state.gl.toneMapping = THREE.NoToneMapping
+/* Renderização em espaço linear para acumulação aditiva mais suave */
+state.gl.outputColorSpace = THREE.LinearSRGBColorSpace
+state.gl.toneMapping = THREE.NoToneMapping
         }}
       >
         {/* Base: luzes */}
         {lightFiles.map(f => (
-          <SphereLayer key={f} url={`${baseUrl}${f}`} blending={currentBlending} opacity={(values[f] ?? 10) / 10} renderOrder={0} />
+<SphereLayer key={f} url={`${baseUrl}${f}`} blending={currentBlending} opacity={(values[f] ?? 50) / 100} renderOrder={0} />
         ))}
 
         {/* Overlay FINAL: não faz parte da pilha de efeitos, sobrepõe quando ativo */}

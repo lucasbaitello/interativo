@@ -1,4 +1,9 @@
-// Copia imagens de ./img para ./public/img e gera manifest.json com lista de luzes
+// Copia imagens de ./img para ./public/img e (opcionalmente) gera manifest.json com lista de luzes
+// Como usar:
+// 1) Coloque suas imagens em ./img/<ambiente>/luzes ou diretamente em ./img/luzes
+// 2) Rode: node scripts/sync-assets.js
+// 3) As imagens serão copiadas para ./public/img/... e podem ser usadas pelo Viewer
+// Para gerar um manifest customizado, adapte este script conforme sua estrutura de pastas.
 // Comentário: ajuste os caminhos de origem/destino se mudar a estrutura.
 import fs from 'fs'
 import path from 'path'

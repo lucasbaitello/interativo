@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "prebuild": "npm run sync-assets",
     "build": "vite build",
     "preview": "vite preview",
     "sync-assets": "node scripts/sync-assets.js"
