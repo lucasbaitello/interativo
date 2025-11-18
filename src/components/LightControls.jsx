@@ -2,7 +2,7 @@ import { sanitizeLabel, groupByNumber } from '../lib/utils'
 
 // Painel lateral com sliders 0..10 por luz, agrupados por numeração
 // Comentário: ajuste estilos e posicionamento do painel conforme a identidade visual.
-export default function LightControls({ files, values, onChange, showFinal, onToggleFinal, collapsed, onToggleCollapsed, debugClick, onToggleDebugClick, lightsState, hotspots, onToggleDimmerizavel, onUnlinkHotspot }) {
+export default function LightControls({ files, values, onChange, showFinal, onToggleFinal, collapsed, onToggleCollapsed, debugClick, onToggleDebugClick, lightsState, hotspots, onToggleDimmerizavel, onUnlinkHotspot, daylightTargets = [], onUpdateDaylightTargets }) {
   const groups = groupByNumber(files.filter(f => !/FINAL\.[a-zA-Z]+$/.test(f)))
 
   const asideClass = collapsed
@@ -20,14 +20,14 @@ export default function LightControls({ files, values, onChange, showFinal, onTo
           <>
             <button
               onClick={onToggleCollapsed}
-              className={'px-2 py-1 rounded-lg bg-white/10 hover:bg-white/20 transition text-xs'}
+              className={'px-2 py-1 rounded-lg bg-white/10 hover:bg-white/20 transition text-xs text-shadow'}
               aria-label={'Colapsar controles'}
             >
               Compactar
             </button>
             <button
               onClick={() => {
-                const payload = { values, lightsState, hotspots, debugClick, showFinal }
+                const payload = { values, lightsState, hotspots, debugClick, showFinal, daylightTargets }
                 fetch('/save-config', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
@@ -47,7 +47,7 @@ export default function LightControls({ files, values, onChange, showFinal, onTo
                   })
                   .catch(e => alert(`Erro ao salvar: ${e}`))
               }}
-              className={'px-2 py-1 rounded-lg bg-white/10 hover:bg-white/20 transition text-xs'}
+              className={'px-2 py-1 rounded-lg bg-white/10 hover:bg-white/20 transition text-xs text-shadow'}
               aria-label={'Salvar configurações no projeto'}
               title={'Salvar config em public/config/viewerState.json'}
             >
@@ -56,7 +56,7 @@ export default function LightControls({ files, values, onChange, showFinal, onTo
             <button
               onClick={() => {
                 // Baixar preset local: gera arquivo viewerState.json para colocar em public/presets/<ambiente>/
-                const payload = { values, lightsState, hotspots, debugClick, showFinal }
+                const payload = { values, lightsState, hotspots, debugClick, showFinal, daylightTargets }
                 const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
                 const url = URL.createObjectURL(blob)
                 const a = document.createElement('a')
@@ -67,7 +67,7 @@ export default function LightControls({ files, values, onChange, showFinal, onTo
                 document.body.removeChild(a)
                 URL.revokeObjectURL(url)
               }}
-              className={'ml-2 px-2 py-1 rounded-lg bg-white/10 hover:bg-white/20 transition text-xs'}
+              className={'ml-2 px-2 py-1 rounded-lg bg-white/10 hover:bg-white/20 transition text-xs text-shadow'}
               aria-label={'Baixar preset local'}
               title={'Baixar viewerState.json para colocar em public/presets/<ambiente>/'}
             >
@@ -106,6 +106,32 @@ export default function LightControls({ files, values, onChange, showFinal, onTo
             >
               <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform shadow ${debugClick ? 'translate-x-5' : 'translate-x-0'}`} />
             </button>
+          </div>
+
+          {/* Configuração: quais luzes o slider Luz do Dia controla */}
+          <div className="mb-5">
+            <h3 className="text-sm font-semibold tracking-wide mb-2">Luzes controladas pela Luz do Dia</h3>
+            <div className="grid grid-cols-2 gap-2">
+              {files.filter(f => !/FINAL\.[a-zA-Z]+$/.test(f)).map(f => {
+                const checked = daylightTargets.includes(f)
+                return (
+                  <label key={f} className="flex items-center gap-2 text-xs">
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={(e) => {
+                        if (!onUpdateDaylightTargets) return
+                        const set = new Set(daylightTargets)
+                        if (e.target.checked) set.add(f)
+                        else set.delete(f)
+                        onUpdateDaylightTargets(Array.from(set))
+                      }}
+                    />
+                    <span>{sanitizeLabel(f)}</span>
+                  </label>
+                )
+              })}
+            </div>
           </div>
 
           {/* Sliders por grupo */}

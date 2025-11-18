@@ -82,6 +82,8 @@ Visualizador 3D com camadas esféricas, controles de luz e modo tela cheia. Incl
   - Selecione uma ou mais luzes e clique em "Confirmar" para associar o ponto.
 - Ao clicar no hotspot fora do modo desenvolvedor, o ponto alterna o "Estado" das luzes associadas (ligado/desligado).
   - Se a luz não for "Dimmerizável", sua intensidade muda entre `0` e `100` junto com o estado.
+ - Em modo desenvolvedor, é possível mover o ponto arrastando-o.
+ - Para forma "Quadrado", há controles independentes de largura e altura, permitindo criar retângulos como áreas ativas de link.
 
 ### Propriedades de cada luz (painel "Interruptores de Luz")
 
@@ -120,7 +122,7 @@ Visualizador 3D com camadas esféricas, controles de luz e modo tela cheia. Incl
 - Local recomendado para organizar presets: `public/presets/<ambiente>/viewerState.json`.
   - Exemplos: `public/presets/sala/viewerState.json`, `public/presets/cozinha/viewerState.json`.
 - Se o servidor retornar "Resposta vazia do servidor", utilize o botão de download e mova o arquivo manualmente para a pasta de presets.
-- Carregamento de presets (opcional): podemos adicionar um botão "Carregar preset" que lê `public/presets/<ambiente>/viewerState.json` e aplica o estado.
+ - Auto-carregamento de preset: se existir `public/presets/luzes/viewerState.json`, o aplicativo carrega automaticamente ao iniciar e aplica o estado.
 
 ## Atualizações de UI e Comportamento
 
@@ -128,3 +130,22 @@ Visualizador 3D com camadas esféricas, controles de luz e modo tela cheia. Incl
 - Menu do desenvolvedor: sliders mais espessos (`range-thick`) e linha dedicada para maior precisão.
 - Valor exibido: em vez de input numérico, mostramos porcentagem somente leitura para evitar cursor de digitação.
 - Luzes não dimerizáveis: ao alternar o estado, o valor do slider permanece absoluto; apenas o estado muda (liga/desliga).
+- Ações rápidas no slider "Luz do Dia":
+   - `Lightbulb fill`: acende todas as luzes aplicando a configuração do preset carregado.
+   - `Lightbulb off`: apaga todas as luzes exceto as de Luz do Dia.
+   - `Ajustes` (ícone de sliders): abre uma janela flutuante com ajustes avançados.
+
+## Novidades recentes
+
+- Auto-ligar dimerizáveis: ao mover qualquer slider marcado como "Dimmerizável", a luz correspondente é automaticamente ligada (`estado: true`).
+- Hotspots sem duplicação: ao confirmar a edição de um ponto, os links com as luzes são reconciliados (adicionados apenas uma vez e removidos das luzes desmarcadas).
+- Arraste mais suave dos hotspots: o movimento agora usa a interseção do raio do ponteiro com a esfera, mantendo o ponto na superfície com menos truncamento.
+- Alvos da Luz do Dia configuráveis: no painel de desenvolvedor, há uma seção "Luzes controladas pela Luz do Dia" com checkboxes para escolher quais luzes o slider vertical deve ajustar. Essa configuração é persistida em `localStorage` e também é suportada em presets.
+- Layout padronizado do painel do usuário: o espaçamento dos sliders compactos foi ajustado para se manter consistente mesmo quando há 0 ou 1 luz dimerizável.
+- Ajustes avançados: botão de "Ajustes" no painel do usuário abre uma janela com sliders de Temperatura, Saturação, Contraste, Gama, Highlight Burn e Redução de Ruído. As alterações de Saturação/Contraste/Gama/Highlight e Redução de Ruído são aplicadas globalmente via filtros CSS no Canvas.
+- Sliders com arestas mais suaves e contraste aumentado: elementos brancos utilizam ~50% de opacidade; trilhas cinzas foram escurecidas com ~70% de opacidade para melhorar a legibilidade.
+ - Textos com sombra no painel do desenvolvedor: "Compactar", "Salvar config" e "Baixar preset" recebem `text-shadow` para melhor legibilidade.
+ - Preset inclui alvos da Luz do Dia: o arquivo `viewerState.json` gerado agora contém `daylightTargets` para persistir quais luzes são afetadas pelo slider "Luz do Dia".
+ - Janela de ajustes sem blur: o overlay não aplica desfoque ao ambiente, permitindo ajustar a imagem com precisão.
+ - Slider de brilho e botão "restaurar padrão": o modal de ajustes inclui controle de brilho e um botão para voltar aos valores padrão (Saturação 1, Contraste 1, Gama 1, Brilho 1, Highlight 0, Ruído 0, Temperatura 0).
+ - Painel do usuário: quando não há luzes dimerizáveis, a área permanece vazia (sem mensagem).

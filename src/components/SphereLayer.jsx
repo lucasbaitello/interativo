@@ -4,7 +4,7 @@ import * as THREE from 'three'
 
 // Camada esférica com textura e blending configurável
 // Comentário: ajuste o tamanho da esfera e o renderOrder conforme necessário.
-export default function SphereLayer({ url, opacity = 1, blending = THREE.NormalBlending, renderOrder = 0 }) {
+export default function SphereLayer({ url, opacity = 1, blending = THREE.NormalBlending, renderOrder = 0, tint = '#ffffff' }) {
   const { geometry, material } = useMemo(() => {
     const geometry = new THREE.SphereGeometry(10, 64, 64)
     // Cache de textura habilitado
@@ -21,15 +21,20 @@ texture.colorSpace = THREE.LinearSRGBColorSpace
       transparent: true,
       depthWrite: false,
       blending,
-      opacity: 1
+      opacity: 1,
+      color: new THREE.Color('#ffffff')
     })
     return { geometry, material }
   }, [url, blending])
 
   // Suaviza transições de opacidade sem recriar material (remove piscadas)
   useFrame(() => {
-    const target = opacity
-    material.opacity = THREE.MathUtils.lerp(material.opacity, target, 0.2)
+    // Opacidade suave
+    const targetOpacity = opacity
+    material.opacity = THREE.MathUtils.lerp(material.opacity, targetOpacity, 0.15)
+    // Cor (temperatura) suave — evita recriar material e flicker
+    const targetColor = (tint instanceof THREE.Color) ? tint : new THREE.Color(tint)
+    material.color.lerp(targetColor, 0.12)
   })
 
   return (

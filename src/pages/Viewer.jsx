@@ -21,8 +21,14 @@ const [values, setValues] = useState({}) // intensidade 0..10 por arquivo
   const [editingHotspotId, setEditingHotspotId] = useState(null)
   const [menuSelection, setMenuSelection] = useState({})
   const [lightsState, setLightsState] = useState({})
+  const [daylightTargets, setDaylightTargets] = useState([]) // arquivos controlados pelo slider Luz do Dia
   const containerRef = useRef(null)
+  const canvasElRef = useRef(null)
   const [userPanelOpen, setUserPanelOpen] = useState(true)
+  const [temperature, setTemperature] = useState(0) // -40..40
+  const [presetData, setPresetData] = useState(null)
+  const [adjustmentsOpen, setAdjustmentsOpen] = useState(false)
+  const [adjustments, setAdjustments] = useState({ saturation: 1, contrast: 1, gamma: 1, brightness: 1, highlights: 0, denoise: 0 })
 
   // Carrega estado salvo imediatamente, antes do manifest, para evitar perda visual após refresh
   useEffect(() => {
@@ -34,6 +40,8 @@ const [values, setValues] = useState({}) // intensidade 0..10 por arquivo
         if (Array.isArray(saved.hotspots)) setHotspots(saved.hotspots)
         if (typeof saved.debugClick === 'boolean') setDebugClick(saved.debugClick)
         if (typeof saved.showFinal === 'boolean') setShowFinal(saved.showFinal)
+        if (Array.isArray(saved.daylightTargets)) setDaylightTargets(saved.daylightTargets)
+        if (saved.adjustments) setAdjustments(prev => ({ ...prev, ...saved.adjustments }))
       }
     } catch {}
   }, [])
@@ -49,6 +57,7 @@ const [values, setValues] = useState({}) // intensidade 0..10 por arquivo
         if (r.ok) {
           const preset = await r.json()
           if (cancelled) return
+          setPresetData(preset)
           if (preset.values) setValues(prev => ({ ...prev, ...preset.values }))
           if (preset.lightsState) {
             setLightsState(prev => {
@@ -67,6 +76,7 @@ const [values, setValues] = useState({}) // intensidade 0..10 por arquivo
           if (Array.isArray(preset.hotspots)) setHotspots(preset.hotspots)
           if (typeof preset.debugClick === 'boolean') setDebugClick(preset.debugClick)
           if (typeof preset.showFinal === 'boolean') setShowFinal(preset.showFinal)
+          if (Array.isArray(preset.daylightTargets)) setDaylightTargets(preset.daylightTargets)
         }
       } catch (e) {
         console.warn('Preset padrão não encontrado ou inválido:', e)
@@ -85,6 +95,7 @@ const [values, setValues] = useState({}) // intensidade 0..10 por arquivo
         // estado inicial: intensidade 50 (0–100) para todas as luzes
         const v = {}
         const ls = {}
+        const defaultDaylightTargets = []
         for (const f of sorted) {
           if (!/FINAL\.[a-zA-Z]+$/.test(f)) {
             v[f] = 50
@@ -94,6 +105,10 @@ const [values, setValues] = useState({}) // intensidade 0..10 por arquivo
               dimmerizavel: false, // padrão desativado
               valor: 50,
               pontos: []
+            }
+            const s = sanitizeLabel(f)
+            if (s === 'DOME' || s === 'DOME 2' || s === 'REFORCO DO SOL') {
+              defaultDaylightTargets.push(f)
             }
           }
         }
@@ -114,9 +129,11 @@ const [values, setValues] = useState({}) // intensidade 0..10 por arquivo
           if (Array.isArray(saved?.hotspots)) setHotspots(saved.hotspots)
           if (typeof saved?.debugClick === 'boolean') setDebugClick(saved.debugClick)
           if (typeof saved?.showFinal === 'boolean') setShowFinal(saved.showFinal)
+          setDaylightTargets(Array.isArray(saved?.daylightTargets) ? saved.daylightTargets : defaultDaylightTargets)
         } catch {
           setValues(v)
           setLightsState(ls)
+          setDaylightTargets(defaultDaylightTargets)
         }
       })
       .catch(() => {
@@ -137,11 +154,8 @@ const [values, setValues] = useState({}) // intensidade 0..10 por arquivo
 
   const handleChange = (file, val) => {
     if (file === '__daylight') {
-      // Aplicar controle simultâneo às luzes DOME, DOME 2 e REFORCO DO SOL
-      const targets = lightFiles.filter(f => {
-        const s = sanitizeLabel(f)
-        return s === 'DOME' || s === 'DOME 2' || s === 'REFORCO DO SOL'
-      })
+      // Aplicar controle simultâneo conforme configuração do desenvolvedor
+      const targets = daylightTargets.length ? daylightTargets : []
       setValues(prev => {
         const next = { ...prev, __daylight: val }
         for (const t of targets) next[t] = val
@@ -149,9 +163,39 @@ const [values, setValues] = useState({}) // intensidade 0..10 por arquivo
       })
     } else {
       setValues(prev => ({ ...prev, [file]: val }))
+      // Ao ajustar sliders dimerizáveis, ligue a luz automaticamente
+      setLightsState(prev => {
+        const cur = prev[file] || {}
+        if (cur.dimmerizavel) {
+          return { ...prev, [file]: { ...cur, estado: true, valor: val } }
+        }
+        return { ...prev, [file]: { ...cur, valor: val } }
+      })
     }
   }
   const currentBlending = THREE.AdditiveBlending
+
+  // Converte temperatura para um "tint" multiplicativo: positivo = mais quente; negativo = mais frio
+  const tintColor = useMemo(() => {
+    const clamp = (n, min, max) => Math.min(Math.max(n, min), max)
+    const t = clamp(temperature, -40, 40)
+    if (t === 0) return '#ffffff'
+    if (t > 0) {
+      const k = t / 40 // 0..1
+      const r = 1.0
+      const g = 1.0 - 0.15 * k
+      const b = 1.0 - 0.30 * k
+      const c = new THREE.Color(r, g, b)
+      return c
+    } else {
+      const k = (-t) / 40 // 0..1
+      const r = 1.0 - 0.20 * k
+      const g = 1.0 - 0.10 * k
+      const b = 1.0
+      const c = new THREE.Color(r, g, b)
+      return c
+    }
+  }, [temperature])
 
   const toggleFullscreen = async () => {
     const el = containerRef.current
@@ -202,7 +246,7 @@ const [values, setValues] = useState({}) // intensidade 0..10 por arquivo
 
   // Adiciona hotspot na superfície da esfera ao clicar em modo debug
   const addHotspot = (point) => {
-    const id = Date.now().toString()
+    const id = (self.crypto && self.crypto.randomUUID) ? self.crypto.randomUUID() : `${Date.now()}-${Math.floor(Math.random()*1e6)}`
     setHotspots(prev => [...prev, { id, position: [point.x, point.y, point.z], lights: [], shape: 'sphere', size: 0.2 }])
     setEditingHotspotId(id)
     const initialSel = {}
@@ -213,11 +257,21 @@ const [values, setValues] = useState({}) // intensidade 0..10 por arquivo
   const assignLightsToHotspot = () => {
     if (!editingHotspotId) return
     const selected = Object.keys(menuSelection).filter(f => menuSelection[f])
+    // Atualiza luzes do hotspot
     setHotspots(prev => prev.map(h => h.id === editingHotspotId ? { ...h, lights: selected } : h))
+    // Reconciliar pontos nas luzes: adiciona aos selecionados (sem duplicar) e remove dos não selecionados
     setLightsState(prev => {
       const next = { ...prev }
-      for (const f of selected) {
-        next[f] = { ...next[f], pontos: [...next[f].pontos, editingHotspotId] }
+      for (const f of Object.keys(next)) {
+        const pts = Array.isArray(next[f]?.pontos) ? next[f].pontos : []
+        const has = pts.includes(editingHotspotId)
+        if (selected.includes(f)) {
+          // garantir único
+          next[f] = { ...next[f], pontos: has ? pts : [...pts, editingHotspotId] }
+        } else {
+          // remover se existir
+          next[f] = { ...next[f], pontos: pts.filter(id => id !== editingHotspotId) }
+        }
       }
       return next
     })
@@ -270,13 +324,28 @@ const [values, setValues] = useState({}) // intensidade 0..10 por arquivo
         lightsState,
         hotspots,
         debugClick,
-        showFinal
+        showFinal,
+        daylightTargets,
+        adjustments
       }
       localStorage.setItem('viewerState', JSON.stringify(payload))
     } catch (e) {
       console.warn('Falha ao salvar viewerState no localStorage:', e)
     }
-  }, [values, lightsState, hotspots, debugClick, showFinal])
+  }, [values, lightsState, hotspots, debugClick, showFinal, daylightTargets, adjustments])
+
+  // Aplica filtros CSS globais (saturação, contraste, gama aprox., destaque e redução de ruído)
+  useEffect(() => {
+    const el = canvasElRef.current
+    if (!el) return
+    const { saturation = 1, contrast = 1, gamma = 1, brightness = 1, highlights = 0, denoise = 0 } = adjustments || {}
+    const brightnessFromGamma = Math.pow(gamma, -0.5)
+    const contrastAdj = contrast * (1 + (highlights || 0) * 0.25)
+    const brightnessAdj = brightnessFromGamma * brightness * (1 + (highlights || 0) * 0.12)
+    const blurPx = Math.max(0, denoise || 0)
+    const filter = `saturate(${saturation}) contrast(${contrastAdj}) brightness(${brightnessAdj}) ${blurPx > 0 ? `blur(${blurPx}px)` : ''}`.trim()
+    el.style.filter = filter
+  }, [adjustments])
 
   return (
     <div ref={containerRef} className="h-screen w-screen overflow-hidden relative">
@@ -287,6 +356,7 @@ const [values, setValues] = useState({}) // intensidade 0..10 por arquivo
 /* Renderização em espaço linear para acumulação aditiva mais suave */
 state.gl.outputColorSpace = THREE.LinearSRGBColorSpace
 state.gl.toneMapping = THREE.NoToneMapping
+          canvasElRef.current = state.gl.domElement
         }}
       >
         {/* Base: luzes */}
@@ -294,19 +364,16 @@ state.gl.toneMapping = THREE.NoToneMapping
           const estadoOn = lightsState?.[f]?.estado !== false
           const opacity = estadoOn ? (values[f] ?? 50) / 100 : 0
           return (
-            <SphereLayer key={f} url={`${baseUrl}${f}`} blending={currentBlending} opacity={opacity} renderOrder={0} />
+            <SphereLayer key={f} url={`${baseUrl}${f}`} blending={currentBlending} opacity={opacity} renderOrder={0} tint={tintColor} />
           )
         })}
 
         {/* Esfera de picking invisível para capturar coordenadas quando em modo debug */}
         <mesh
-          onPointerDown={(e) => {
+          onDoubleClick={(e) => {
             if (!debugClick) return
-            const now = Date.now()
-            if (now - lastClickRef.current < 400) {
-              addHotspot(e.point)
-            }
-            lastClickRef.current = now
+            if (editingHotspotId) return
+            addHotspot(e.point)
           }}
           renderOrder={-100}
           scale={[-1, 1, 1]}
@@ -338,7 +405,18 @@ state.gl.toneMapping = THREE.NoToneMapping
 
         {/* Hotspots */}
         {hotspots.map(h => (
-          <Hotspot key={h.id} position={h.position} debugActive={debugClick} onClick={() => onHotspotClick(h)} shape={h.shape} size={h.size} />
+          <Hotspot
+            key={h.id}
+            position={h.position}
+            debugActive={debugClick}
+            onClick={() => onHotspotClick(h)}
+            onMove={(pos) => setHotspots(prev => prev.map(x => x.id === h.id ? { ...x, position: pos } : x))}
+            shape={h.shape}
+            size={h.size}
+            sizeX={h.sizeX}
+            sizeY={h.sizeY}
+            radius={10}
+          />
         ))}
       </Canvas>
 
@@ -357,7 +435,55 @@ state.gl.toneMapping = THREE.NoToneMapping
         hotspots={hotspots}
         onToggleDimmerizavel={toggleDimmerizavel}
         onUnlinkHotspot={unlinkHotspotFromLight}
+        daylightTargets={daylightTargets}
+        onUpdateDaylightTargets={(targets) => setDaylightTargets(targets)}
       />
+
+      {/* Janela flutuante de Ajustes Avançados */}
+      {adjustmentsOpen && (
+        <>
+          <div className="fixed inset-0 bg-black/40 z-50" onClick={() => setAdjustmentsOpen(false)} />
+          <div className="fixed right-20 top-1/2 -translate-y-1/2 w-80 glass rounded-2xl p-4 z-50 shadow-2xl shadow-black/40">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-white/90 text-sm font-medium">Ajustes avançados</div>
+              <button className="w-8 h-8 rounded-md bg-white/10 hover:bg-white/20 flex items-center justify-center" onClick={() => setAdjustmentsOpen(false)} aria-label="Fechar ajustes"><i className="bi bi-x text-white" /></button>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <div className="text-[11px] text-neutral-200 mb-1">Temperatura de cor</div>
+                <input type="range" min={-40} max={40} step={1} value={temperature} onChange={e => setTemperature(parseFloat(e.target.value))} className="w-full range-thick" style={{ '--progress': `${(temperature + 40) / 80 * 100}%` }} />
+              </div>
+              <div>
+                <div className="text-[11px] text-neutral-200 mb-1">Saturação</div>
+                <input type="range" min={0} max={2} step={0.01} value={adjustments.saturation} onChange={e => setAdjustments(a => ({ ...a, saturation: parseFloat(e.target.value) }))} className="w-full range-thick" style={{ '--progress': `${(adjustments.saturation / 2) * 100}%` }} />
+              </div>
+              <div>
+                <div className="text-[11px] text-neutral-200 mb-1">Contraste</div>
+                <input type="range" min={0.5} max={2} step={0.01} value={adjustments.contrast} onChange={e => setAdjustments(a => ({ ...a, contrast: parseFloat(e.target.value) }))} className="w-full range-thick" style={{ '--progress': `${((adjustments.contrast - 0.5) / 1.5) * 100}%` }} />
+              </div>
+              <div>
+                <div className="text-[11px] text-neutral-200 mb-1">Gama</div>
+                <input type="range" min={0.5} max={2} step={0.01} value={adjustments.gamma} onChange={e => setAdjustments(a => ({ ...a, gamma: parseFloat(e.target.value) }))} className="w-full range-thick" style={{ '--progress': `${((adjustments.gamma - 0.5) / 1.5) * 100}%` }} />
+              </div>
+              <div>
+                <div className="text-[11px] text-neutral-200 mb-1">Brilho</div>
+                <input type="range" min={0.5} max={1.5} step={0.01} value={adjustments.brightness} onChange={e => setAdjustments(a => ({ ...a, brightness: parseFloat(e.target.value) }))} className="w-full range-thick" style={{ '--progress': `${((adjustments.brightness - 0.5) / 1.0) * 100}%` }} />
+              </div>
+              <div>
+                <div className="text-[11px] text-neutral-200 mb-1">Highlight burn</div>
+                <input type="range" min={0} max={1} step={0.01} value={adjustments.highlights} onChange={e => setAdjustments(a => ({ ...a, highlights: parseFloat(e.target.value) }))} className="w-full range-thick" style={{ '--progress': `${(adjustments.highlights) * 100}%` }} />
+              </div>
+              <div>
+                <div className="text-[11px] text-neutral-200 mb-1">Redução de ruído</div>
+                <input type="range" min={0} max={4} step={0.1} value={adjustments.denoise} onChange={e => setAdjustments(a => ({ ...a, denoise: parseFloat(e.target.value) }))} className="w-full range-thick" style={{ '--progress': `${(adjustments.denoise / 4) * 100}%` }} />
+              </div>
+              <div className="pt-2 flex justify-end">
+                <button className="px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-xs text-shadow" onClick={() => { setAdjustments({ saturation: 1, contrast: 1, gamma: 1, brightness: 1, highlights: 0, denoise: 0 }); setTemperature(0) }}>restaurar padrão</button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Painel do Usuário: Luz do Dia + sliders compactos */}
       <UserPanel
@@ -366,6 +492,41 @@ state.gl.toneMapping = THREE.NoToneMapping
         values={values}
         onChange={handleChange}
         lightsState={lightsState}
+        onPresetAll={() => {
+          if (presetData) {
+            if (presetData.values) setValues(prev => ({ ...prev, ...presetData.values }))
+            setLightsState(prev => {
+              const next = { ...prev }
+              for (const f of Object.keys(next)) {
+                next[f] = { ...next[f], estado: true }
+              }
+              if (presetData.lightsState) {
+                for (const f of Object.keys(presetData.lightsState)) {
+                  next[f] = { ...next[f], ...presetData.lightsState[f], estado: true }
+                }
+              }
+              return next
+            })
+          } else {
+            setLightsState(prev => {
+              const next = { ...prev }
+              for (const f of Object.keys(next)) next[f] = { ...next[f], estado: true }
+              return next
+            })
+          }
+        }}
+        onTurnOffExceptDaylight={() => {
+          const targets = daylightTargets
+          setLightsState(prev => {
+            const next = { ...prev }
+            for (const f of Object.keys(next)) {
+              const keep = targets.includes(f)
+              next[f] = { ...next[f], estado: keep }
+            }
+            return next
+          })
+        }}
+        onOpenAdjustments={() => setAdjustmentsOpen(true)}
       />
 
       {/* Botão de tela cheia (canto inferior direito) */}
@@ -430,6 +591,33 @@ state.gl.toneMapping = THREE.NoToneMapping
                     onChange={e => setHotspots(prev => prev.map(h => h.id === editingHotspotId ? { ...h, size: parseFloat(e.target.value) } : h))}
                   />
                 </label>
+                {/* Para quadrado, controle independente de largura/altura para formar retângulos */}
+                {hotspots.find(h => h.id === editingHotspotId)?.shape === 'box' && (
+                  <div className="col-span-2 grid grid-cols-2 gap-2">
+                    <label className="flex flex-col">
+                      <span>Largura</span>
+                      <input
+                        type="range"
+                        min={0.1}
+                        max={1.2}
+                        step={0.05}
+                        value={hotspots.find(h => h.id === editingHotspotId)?.sizeX ?? hotspots.find(h => h.id === editingHotspotId)?.size ?? 0.2}
+                        onChange={e => setHotspots(prev => prev.map(h => h.id === editingHotspotId ? { ...h, sizeX: parseFloat(e.target.value) } : h))}
+                      />
+                    </label>
+                    <label className="flex flex-col">
+                      <span>Altura</span>
+                      <input
+                        type="range"
+                        min={0.1}
+                        max={1.2}
+                        step={0.05}
+                        value={hotspots.find(h => h.id === editingHotspotId)?.sizeY ?? hotspots.find(h => h.id === editingHotspotId)?.size ?? 0.2}
+                        onChange={e => setHotspots(prev => prev.map(h => h.id === editingHotspotId ? { ...h, sizeY: parseFloat(e.target.value) } : h))}
+                      />
+                    </label>
+                  </div>
+                )}
               </div>
               <div className="max-h-56 overflow-auto space-y-2">
                 {files.filter(f => !/FINAL\.[a-zA-Z]+$/.test(f)).map(f => (
