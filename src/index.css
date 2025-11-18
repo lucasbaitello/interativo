@@ -19,6 +19,9 @@ body { @apply bg-neutral-950 text-neutral-100; }
   text-shadow: 0 1px 2px rgba(0,0,0,0.6);
 }
 
+/* Remove caret de digitação em elementos não editáveis */
+.no-caret { caret-color: transparent; }
+
 /* Deixa sliders em cinza, evitando azul padrão do navegador */
 .range-gray { accent-color: #9ca3af; }
 .range-gray::-webkit-slider-runnable-track {
@@ -36,4 +39,118 @@ body { @apply bg-neutral-950 text-neutral-100; }
 .range-gray::-moz-range-thumb {
   background-color: #9ca3af;
   border: none;
+}
+
+/* Slider vertical com gradiente interno (Dia -> Noite), discreto/pastel */
+.range-vertical {
+  -webkit-appearance: slider-vertical;
+  appearance: slider-vertical;
+  writing-mode: bt-lr;
+  width: 8px;
+  height: 176px;
+}
+.range-thin { -webkit-appearance: none; appearance: none; accent-color: transparent; }
+.range-daylight { accent-color: transparent; }
+.range-daylight::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 9999px;
+  /* Invertido: agora dia (amarelo) preenche até o valor, noite (azul) acima */
+  background: linear-gradient(to bottom,
+    rgba(253, 230, 138, 0.35) 0%,
+    rgba(253, 230, 138, 0.35) var(--progress),
+    rgba(147, 197, 253, 0.35) var(--progress),
+    rgba(147, 197, 253, 0.35) 100%);
+}
+.range-daylight::-webkit-slider-thumb {
+  /* Thumb transparente e pequeno para eliminar a esfera visual */
+  width: 8px; height: 8px;
+  -webkit-appearance: none;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+.range-daylight::-moz-range-track {
+  height: 8px;
+  border-radius: 9999px;
+  background: rgba(147, 197, 253, 0.35);
+}
+.range-daylight::-moz-range-progress {
+  height: 8px;
+  border-radius: 9999px;
+  background: rgba(253, 230, 138, 0.35);
+}
+.range-daylight::-moz-range-thumb {
+  width: 8px; height: 8px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+/* Slider fino e com menor peso visual */
+.range-thin { accent-color: #9ca3af; }
+.range-thin::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 9999px;
+  background: linear-gradient(to right,
+    rgba(156, 163, 175, 0.5) 0%,
+    rgba(156, 163, 175, 0.5) var(--progress),
+    rgba(156, 163, 175, 0.2) var(--progress),
+    rgba(156, 163, 175, 0.2) 100%);
+}
+.range-thin::-webkit-slider-thumb {
+  /* Thumb transparente e pequeno para reduzir peso visual e manter usabilidade */
+  width: 6px; height: 6px;
+  -webkit-appearance: none;
+  background: transparent;
+  border: none;
+}
+.range-thin::-moz-range-track {
+  height: 6px;
+  border-radius: 0;
+  background: rgba(156, 163, 175, 0.2);
+}
+.range-thin::-moz-range-progress {
+  height: 6px;
+  border-radius: 0;
+  background: rgba(156, 163, 175, 0.5);
+}
+.range-thin::-moz-range-thumb {
+  width: 6px; height: 6px;
+  background: transparent;
+  border: none;
+}
+
+/* Slider espesso para precisão no menu do desenvolvedor */
+.range-thick { -webkit-appearance: none; appearance: none; accent-color: transparent; }
+.range-thick::-webkit-slider-runnable-track {
+  height: 12px;
+  border-radius: 9999px;
+  background: linear-gradient(to right,
+    rgba(156, 163, 175, 0.6) 0%,
+    rgba(156, 163, 175, 0.6) var(--progress),
+    rgba(156, 163, 175, 0.25) var(--progress),
+    rgba(156, 163, 175, 0.25) 100%);
+}
+.range-thick::-webkit-slider-thumb {
+  width: 14px; height: 14px;
+  -webkit-appearance: none;
+  background: #e5e7eb; /* cinza claro para melhor pega */
+  border: 1px solid rgba(255,255,255,0.4);
+  border-radius: 9999px;
+}
+.range-thick::-moz-range-track {
+  height: 12px;
+  border-radius: 0;
+  background: rgba(156, 163, 175, 0.25);
+}
+.range-thick::-moz-range-progress {
+  height: 12px;
+  border-radius: 0;
+  background: rgba(156, 163, 175, 0.6);
+}
+.range-thick::-moz-range-thumb {
+  width: 14px; height: 14px;
+  background: #e5e7eb;
+  border: 1px solid rgba(255,255,255,0.4);
+  border-radius: 9999px;
 }
