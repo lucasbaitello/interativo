@@ -25,7 +25,6 @@ export default function LightControls({ files, values, onChange, showFinal, onTo
             >
               Compactar
             </button>
-            <div className="text-xs text-neutral-400">0–10 intensidade</div>
           </>
         )}
       </div>
@@ -35,20 +34,23 @@ export default function LightControls({ files, values, onChange, showFinal, onTo
         <>
           {/* Seletor de blending removido conforme solicitação */}
 
-          {/* Toggle da FINAL */}
+          {/* Toggle da FINAL (estilo iOS, menor e cores dos sliders) */}
           <div className="mb-4 flex items-center justify-between">
-            <span className="text-xs">Imagem FINAL sobrepor</span>
+            <span className="text-xs text-shadow">Imagem FINAL</span>
             <button
               onClick={onToggleFinal}
-              className={`px-3 py-1 rounded-lg text-xs transition ${showFinal ? 'bg-white/20' : 'bg-white/10'}`}
+              aria-label={showFinal ? 'Desativar Imagem FINAL' : 'Ativar Imagem FINAL'}
+              className={`relative w-10 h-5 rounded-full transition shadow-lg shadow-black/40 ${showFinal ? 'bg-gray-400' : 'bg-white/15'}`}
             >
-              {showFinal ? 'Ativada' : 'Desativada'}
+              <span
+                className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform shadow ${showFinal ? 'translate-x-5' : 'translate-x-0'}`}
+              />
             </button>
           </div>
 
           {/* Sliders por grupo */}
           <div>
-            <h2 className="text-sm font-semibold tracking-wide mb-2">Interruptores de Luz</h2>
+            <h2 className="text-sm font-semibold tracking-wide mb-2 text-shadow">Interruptores de Luz</h2>
             {Object.keys(groups).sort((a, b) => parseInt(a) - parseInt(b)).map(group => (
               <div key={group} className="mb-5">
                 {/* Oculta rótulo de número do grupo para um visual mais limpo */}

@@ -1,92 +1,73 @@
-# Interativo2 — Documentação
+# Viewer de Camadas (R3F / three-stdlib)
 
-Este projeto é um visualizador 360° com camadas de luz, controle de intensidade por sliders, e uma sobreposição de imagem "FINAL". Foi construído com Vite + React e Three.js, seguindo boas práticas de legibilidade e manutenção.
+Visualizador 3D com camadas esféricas, controles de luz e modo tela cheia. Inclui sliders em escala 0–100 com padrão 50, zoom funcional com movimento mais fluido (damping), e UI com botões e toggle estilizados para melhor legibilidade.
 
-## Evolução do Aplicativo
-- Correção da inversão horizontal do panorama 360° no `SphereLayer.jsx` (escala `[-1,1,1]`).
-- Ocultação de números nos rótulos e manutenção de agrupamento interno por índice.
-- Menu de controles colapsável em forma de círculo, com sombra sutil para legibilidade.
-- Mistura de luzes fixada em modo aditivo, reduzindo artefatos configurando renderização em espaço linear.
-- Remoção do seletor de blending global e padronização para aditivo.
-- Sliders com valor padrão `5` e visual cinza (sem azul do navegador).
+## Instalação
 
-## Funcionalidades Principais
-- Visualização 360° e camadas de luz por textura sobreposta.
-- Controle de intensidade por slider (0–10) por camada.
-- Overlay independente da imagem `FINAL` com toggle.
-- Menu colapsável compacto (círculo) e expandido com sombra para melhor contraste.
-- Renderização em espaço de cor linear para acumulação aditiva mais suave.
+- Requisitos: Node.js 18+, npm
+- Instale dependências: `npm install`
+- Sincronize assets (opcional, se houver): `sync-assets` via `deploy.bat`
+- Execute em desenvolvimento: `npm run dev`
 
-## Estrutura do Projeto
-- `src/pages/Viewer.jsx`: Página principal do viewer, estado global de intensidades, toggle do `FINAL` e setup do renderer (linear space).
-- `src/components/LightControls.jsx`: HUD de controles, agrupamento por número, sliders e estilos.
-- `src/components/SphereLayer.jsx`: Mesh da esfera e aplicação das texturas por camada, correção de inversão e espaço de cor da textura.
-- `src/lib/utils.js`: Utilitários, incluindo `sanitizeLabel` (remove números dos rótulos e padroniza maiúsculas).
-- `scripts/sync-assets.js`: Sincroniza imagens de `./img` para `./public/img` e (quando habilitado) gera `manifest.json` com lista das luzes.
-- `src/index.css`: Estilos globais, sombra de texto (`.text-shadow`) e slider cinza (`.range-gray`).
+## Uso
 
-## Personalizações
-- Aparência do HUD:
-  - Classe `.text-shadow` em `src/index.css` aumenta contraste dos rótulos sobre fundos claros.
-  - Sliders em cinza via `.range-gray` e `accent-color` (evita azul padrão).
-- Rótulos das luzes:
-  - `sanitizeLabel` em `src/lib/utils.js` remove prefixos numéricos e padroniza para maiúsculas.
-- Mistura das luzes:
-  - Padronizada para aditivo; renderer configurado em `Viewer.jsx` com `outputColorSpace = LinearSRGBColorSpace` e `toneMapping = NoToneMapping`.
-- Overlay FINAL:
-  - Toggle independente na UI; textura carregada como camada especial.
+- Acesse `http://localhost:5173/viewer`.
+- Sliders: cada controle opera na escala `0–100` e inicia em `50` por padrão.
+- Zoom: use o scroll do mouse sobre o Canvas para aproximar/afastar. Movimento mais fluido com `enableDamping`. Implementado via FOV para maior potência (segure Shift para acelerar).
+- Tela cheia:
+  - Passe o mouse no canto inferior direito para revelar o botão de tela cheia (hover-only).
+  - Clique para entrar/sair (toggle único). Ícones: `bi-aspect-ratio` (entrar) e `bi-box-arrow-in-down-left` (sair).
+  - Em tela cheia, o botão de sair também aparece no topo ao passar o mouse.
+- Imagem FINAL: toggle estilo iOS, menor, cores compatíveis com os sliders (cinza), e com sombra para legibilidade. Desligado por padrão.
 
-## Como personalizar os valores dos sliders
-Há dois pontos diretos para controlar o valor padrão e comportamento:
-- `src/pages/Viewer.jsx`: Estado inicial das intensidades (valores padrão por camada). Ajuste os valores para `5` (ou outro) na estrutura inicial do estado.
-- `src/components/LightControls.jsx`: No `<input type="range" />`, o valor usa `values[f] ?? 5`. Alterar o `5` aqui muda o fallback quando um valor não está presente no estado.
+## Estrutura de Arquivos
 
-Exemplo rápido (Viewer.jsx):
-```jsx
-// Estado inicial dos valores de luzes
-const [values, setValues] = useState({
-  '0 - Dome.png': 5,
-  '1 - Luminária de chão.png': 5,
-  // ... demais entradas
-});
-```
+- `index.html`
+  - Carrega Bootstrap Icons via CDN para os ícones dos botões.
+  - Monta a aplicação.
 
-Exemplo rápido (LightControls.jsx):
-```jsx
-<input
-  type="range"
-  min={0}
-  max={10}
-  step={1}
-  value={values[f] ?? 5} // <- fallback padrão
-  onChange={e => onChange(f, parseInt(e.target.value, 10))}
-  className="w-32 range-gray accent-gray-400"
-/>
-```
+- `src/pages/Viewer.jsx`
+  - Canvas principal (React Three Fiber) e `OrbitControls` (dolly desativado para evitar conflito com FOV).
+  - Configura câmera (`near`, `far`, posição) e controles com `enableDamping`, `dampingFactor`, `minDistance`, `maxDistance`, `rotateSpeed`.
+  - Implementa modo tela cheia com toggle único (`requestFullscreen`/`exitFullscreen`). Botões são hover-only e possuem sombras para visibilidade.
+  - Integração com estado `showFinal` (inicia `false`).
+  - Implementa zoom por FOV (`FovZoom`): ajuste manual em `minFov`, `maxFov`, `sensitivity`. Segure Shift para acelerar.
 
-## Passo-a-passo para adicionar mais um ambiente
-Este projeto trabalha com um conjunto de camadas de luz (texturas) sobre um panorama 360°. Para adicionar outro ambiente:
-1. Prepare as imagens do novo ambiente:
-   - Uma imagem 360° base (equiretangular) para o ambiente.
-   - As camadas de luz em PNG (mesmo mapeamento), idealmente nomeadas com índices para agrupamento (ex.: `0 - Luz geral.png`, `1 - Abajur.png`, etc.).
-2. Crie uma pasta para o novo ambiente em `img\<nome-do-ambiente>\luzes` e coloque as imagens lá.
-3. Rode o sincronizador de assets:
-   - `node scripts\sync-assets.js` (este script copia de `img` para `public\img`; se quiser gerar `manifest.json`, ajuste o script conforme necessidade).
-4. Configure o `Viewer.jsx` para apontar para o novo conjunto:
-   - Defina uma variável `basePath` para o ambiente novo (ex.: `public/img/<nome-do-ambiente>/luzes`).
-   - Liste as camadas do novo ambiente e adicione ao estado inicial `values`.
-   - Carregue as texturas da nova pasta em `SphereLayer`.
-5. Opcional: Adicionar um seletor de ambiente na UI:
-   - Crie um estado `selectedEnvironment` e troque o `basePath` e a lista de camadas conforme o ambiente selecionado.
-6. Teste no `npm run dev` e ajuste as intensidades por slider.
-7. Execute `deploy.bat` para atualizar e publicar.
+- `src/components/LightControls.jsx`
+  - HUD colapsável com sliders (0–100) usando fallback `values[f] ?? 50`.
+  - Toggle "Imagem FINAL" estilo iOS, menor e com cores compatíveis com os sliders (cinza). Inclui sombras e `text-shadow` para legibilidade.
 
-## Deploy e atualização com um clique
-- Use o arquivo `deploy.bat` na raiz do projeto.
-- Ele instala dependências, sincroniza assets (se configurado), valida com build, comita alterações e faz push para `origin/main`.
-- Se o projeto estiver conectado na Vercel via GitHub, o push em `main` dispara o deploy automaticamente. Se tiver o Vercel CLI instalado, o script também tenta publicar com `vercel --prod`.
+- `src/components/SphereLayer.jsx`
+  - Renderiza camadas esféricas com materiais/texturas conforme intensidade dos sliders.
 
-## Notas
-- Espaço de cor linear (`LinearSRGBColorSpace`) é usado nas texturas e no renderer para reduzir ruído na acumulação aditiva.
-- Labels usam sombra de texto para melhorar legibilidade em fundos claros.
-- O menu colapsável permanece como círculo pequeno com sombra sutil.
+- `public/manifest.json`
+  - Mapeia assets das camadas e metadados de exibição.
+
+- `deploy.bat`
+  - Sincroniza assets (se aplicável), roda build e executa `npm run deploy` (GitHub/Vercel). Pode reportar vulnerabilidades do `npm audit` (2 moderadas, 3 altas) — não afetam build.
+
+## Detalhes de UI e Interações
+
+- Botões com sombra para visibilidade em fundo branco.
+- Fullscreen: botão no canto inferior direito é hover-only e alterna entrada/saída.
+- Ícones Bootstrap: `bi-aspect-ratio` e `bi-box-arrow-in-down-left`.
+- Toggle "Imagem FINAL": menor, com cores dos sliders (cinza), desligado por padrão.
+
+## Notas de Zoom
+
+- Zoom por FOV (mais poderoso):
+  - Ajuste `minFov` (zoom-in mais forte), `maxFov` (zoom-out maior) e `sensitivity` (passo por rolagem) no componente `FovZoom` em `Viewer.jsx`.
+  - Segure Shift para acelerar o zoom.
+- Damping: `enableDamping: true` e `dampingFactor: 0.06` para suavidade nos movimentos.
+
+## Exemplos Rápidos
+
+- Entrar em tela cheia: passar o mouse no canto inferior direito e clicar no ícone.
+- Sair da tela cheia: repetir o clique (toggle) ou usar o ícone no topo quando em hover.
+- Ajustar intensidade: mover sliders; valores iniciais são 50.
+
+## Observações
+
+- Regras de rewrite do deploy direcionam para `/viewer` (limitação conhecida).
+- Se o scroll não acionar zoom, garanta que o mouse está sobre o Canvas (não sobre painéis).
+- Após alterações, rode `deploy.bat` para publicar em Vercel via GitHub.
