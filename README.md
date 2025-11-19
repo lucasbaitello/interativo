@@ -147,5 +147,9 @@ Visualizador 3D com camadas esféricas, controles de luz e modo tela cheia. Incl
  - Textos com sombra no painel do desenvolvedor: "Compactar", "Salvar config" e "Baixar preset" recebem `text-shadow` para melhor legibilidade.
  - Preset inclui alvos da Luz do Dia: o arquivo `viewerState.json` gerado agora contém `daylightTargets` para persistir quais luzes são afetadas pelo slider "Luz do Dia".
  - Janela de ajustes sem blur: o overlay não aplica desfoque ao ambiente, permitindo ajustar a imagem com precisão.
+ - Janela de ajustes centralizada e arrastável: surge no centro da página, pode ser movida para qualquer canto e não escurece/oculta o restante da interface.
+ - Arraste de hotspots contínuo: o ponto segue o cursor mesmo fora da sua área até o momento de soltar o mouse (mouseup).
+ - Sombra aplicada amplamente aos textos: adicionamos `text-shadow` nas principais superfícies (Landing, modal de Ajustes e painéis) para legibilidade superior em fundos claros e com efeitos.
+ - Movimento da câmera com amortecimento elástico: reduzimos a `rotateSpeed` e aumentamos o `dampingFactor` enquanto um hotspot está sendo arrastado, deixando a esfera acompanhar com suavidade e sem ultrapassar os pontos.
  - Slider de brilho e botão "restaurar padrão": o modal de ajustes inclui controle de brilho e um botão para voltar aos valores padrão (Saturação 1, Contraste 1, Gama 1, Brilho 1, Highlight 0, Ruído 0, Temperatura 0).
  - Painel do usuário: quando não há luzes dimerizáveis, a área permanece vazia (sem mensagem).

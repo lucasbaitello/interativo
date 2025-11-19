@@ -29,6 +29,10 @@ const [values, setValues] = useState({}) // intensidade 0..10 por arquivo
   const [presetData, setPresetData] = useState(null)
   const [adjustmentsOpen, setAdjustmentsOpen] = useState(false)
   const [adjustments, setAdjustments] = useState({ saturation: 1, contrast: 1, gamma: 1, brightness: 1, highlights: 0, denoise: 0 })
+  const [adjustmentsPos, setAdjustmentsPos] = useState(() => ({ x: (typeof window !== 'undefined' ? window.innerWidth / 2 : 400), y: (typeof window !== 'undefined' ? window.innerHeight / 2 : 300) }))
+  const draggingAdjustRef = useRef(false)
+  const dragOffsetRef = useRef({ x: 0, y: 0 })
+  const [draggingHotspot, setDraggingHotspot] = useState(false)
 
   // Carrega estado salvo imediatamente, antes do manifest, para evitar perda visual após refresh
   useEffect(() => {
@@ -44,6 +48,28 @@ const [values, setValues] = useState({}) // intensidade 0..10 por arquivo
         if (saved.adjustments) setAdjustments(prev => ({ ...prev, ...saved.adjustments }))
       }
     } catch {}
+  }, [])
+
+  // Reposiciona o modal de ajustes no centro ao abrir
+  useEffect(() => {
+    if (adjustmentsOpen && typeof window !== 'undefined') {
+      setAdjustmentsPos({ x: window.innerWidth / 2, y: window.innerHeight / 2 })
+    }
+  }, [adjustmentsOpen])
+
+  // Arraste do modal de ajustes (janela flutuante)
+  useEffect(() => {
+    const onMove = (e) => {
+      if (!draggingAdjustRef.current) return
+      setAdjustmentsPos(prev => ({ x: e.clientX - dragOffsetRef.current.x, y: e.clientY - dragOffsetRef.current.y }))
+    }
+    const onUp = () => { draggingAdjustRef.current = false }
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+    return () => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+    }
   }, [])
 
   // Auto-carregamento de preset se existir (prioriza preset sobre localStorage e defaults)
@@ -387,17 +413,17 @@ state.gl.toneMapping = THREE.NoToneMapping
           <SphereLayer url={`${baseUrl}${baseFile}`} blending={THREE.NormalBlending} opacity={1} renderOrder={1000} />
         )}
 
-        {/* Controles de câmera para navegação 360° */}
+        {/* Controles de câmera para navegação 360° (damping levemente elástico) */}
         <OrbitControls
           makeDefault
           enablePan={false}
           enableZoom={false}
           zoomSpeed={2.2}
-          rotateSpeed={0.8}
+          rotateSpeed={draggingHotspot ? 0.45 : 0.6}
           minDistance={0.00001}
           maxDistance={20000}
           enableDamping
-          dampingFactor={0.06}
+          dampingFactor={draggingHotspot ? 0.12 : 0.10}
           target={[0, 0, 0]}
         />
         {/* Ajuste estes valores para personalizar a força do zoom FOV */}
@@ -411,6 +437,8 @@ state.gl.toneMapping = THREE.NoToneMapping
             debugActive={debugClick}
             onClick={() => onHotspotClick(h)}
             onMove={(pos) => setHotspots(prev => prev.map(x => x.id === h.id ? { ...x, position: pos } : x))}
+            onDragStart={() => setDraggingHotspot(true)}
+            onDragEnd={() => setDraggingHotspot(false)}
             shape={h.shape}
             size={h.size}
             sizeX={h.sizeX}
@@ -442,39 +470,49 @@ state.gl.toneMapping = THREE.NoToneMapping
       {/* Janela flutuante de Ajustes Avançados */}
       {adjustmentsOpen && (
         <>
-          <div className="fixed inset-0 bg-black/40 z-50" onClick={() => setAdjustmentsOpen(false)} />
-          <div className="fixed right-20 top-1/2 -translate-y-1/2 w-80 glass rounded-2xl p-4 z-50 shadow-2xl shadow-black/40">
-            <div className="flex items-center justify-between mb-2">
-              <div className="text-white/90 text-sm font-medium">Ajustes avançados</div>
+          {/* Janela flutuante centralizada, sem escurecer o restante da página */}
+          <div
+            className="fixed w-80 glass rounded-2xl p-4 z-50 shadow-2xl shadow-black/40"
+            style={{ top: `${adjustmentsPos.y}px`, left: `${adjustmentsPos.x}px` }}
+          >
+            <div
+              className="flex items-center justify-between mb-2 cursor-move"
+              onPointerDown={(e) => {
+                draggingAdjustRef.current = true
+                const rect = e.currentTarget.parentElement.getBoundingClientRect()
+                dragOffsetRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top }
+              }}
+            >
+              <div className="text-white/90 text-sm font-medium text-shadow">Ajustes avançados</div>
               <button className="w-8 h-8 rounded-md bg-white/10 hover:bg-white/20 flex items-center justify-center" onClick={() => setAdjustmentsOpen(false)} aria-label="Fechar ajustes"><i className="bi bi-x text-white" /></button>
             </div>
             <div className="space-y-3">
               <div>
-                <div className="text-[11px] text-neutral-200 mb-1">Temperatura de cor</div>
+                <div className="text-[11px] text-neutral-200 mb-1 text-shadow">Temperatura de cor</div>
                 <input type="range" min={-40} max={40} step={1} value={temperature} onChange={e => setTemperature(parseFloat(e.target.value))} className="w-full range-thick" style={{ '--progress': `${(temperature + 40) / 80 * 100}%` }} />
               </div>
               <div>
-                <div className="text-[11px] text-neutral-200 mb-1">Saturação</div>
+                <div className="text-[11px] text-neutral-200 mb-1 text-shadow">Saturação</div>
                 <input type="range" min={0} max={2} step={0.01} value={adjustments.saturation} onChange={e => setAdjustments(a => ({ ...a, saturation: parseFloat(e.target.value) }))} className="w-full range-thick" style={{ '--progress': `${(adjustments.saturation / 2) * 100}%` }} />
               </div>
               <div>
-                <div className="text-[11px] text-neutral-200 mb-1">Contraste</div>
+                <div className="text-[11px] text-neutral-200 mb-1 text-shadow">Contraste</div>
                 <input type="range" min={0.5} max={2} step={0.01} value={adjustments.contrast} onChange={e => setAdjustments(a => ({ ...a, contrast: parseFloat(e.target.value) }))} className="w-full range-thick" style={{ '--progress': `${((adjustments.contrast - 0.5) / 1.5) * 100}%` }} />
               </div>
               <div>
-                <div className="text-[11px] text-neutral-200 mb-1">Gama</div>
+                <div className="text-[11px] text-neutral-200 mb-1 text-shadow">Gama</div>
                 <input type="range" min={0.5} max={2} step={0.01} value={adjustments.gamma} onChange={e => setAdjustments(a => ({ ...a, gamma: parseFloat(e.target.value) }))} className="w-full range-thick" style={{ '--progress': `${((adjustments.gamma - 0.5) / 1.5) * 100}%` }} />
               </div>
               <div>
-                <div className="text-[11px] text-neutral-200 mb-1">Brilho</div>
+                <div className="text-[11px] text-neutral-200 mb-1 text-shadow">Brilho</div>
                 <input type="range" min={0.5} max={1.5} step={0.01} value={adjustments.brightness} onChange={e => setAdjustments(a => ({ ...a, brightness: parseFloat(e.target.value) }))} className="w-full range-thick" style={{ '--progress': `${((adjustments.brightness - 0.5) / 1.0) * 100}%` }} />
               </div>
               <div>
-                <div className="text-[11px] text-neutral-200 mb-1">Highlight burn</div>
+                <div className="text-[11px] text-neutral-200 mb-1 text-shadow">Highlight burn</div>
                 <input type="range" min={0} max={1} step={0.01} value={adjustments.highlights} onChange={e => setAdjustments(a => ({ ...a, highlights: parseFloat(e.target.value) }))} className="w-full range-thick" style={{ '--progress': `${(adjustments.highlights) * 100}%` }} />
               </div>
               <div>
-                <div className="text-[11px] text-neutral-200 mb-1">Redução de ruído</div>
+                <div className="text-[11px] text-neutral-200 mb-1 text-shadow">Redução de ruído</div>
                 <input type="range" min={0} max={4} step={0.1} value={adjustments.denoise} onChange={e => setAdjustments(a => ({ ...a, denoise: parseFloat(e.target.value) }))} className="w-full range-thick" style={{ '--progress': `${(adjustments.denoise / 4) * 100}%` }} />
               </div>
               <div className="pt-2 flex justify-end">
