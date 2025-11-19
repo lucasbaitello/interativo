@@ -19,6 +19,28 @@ body { @apply bg-neutral-950 text-neutral-100; }
   text-shadow: 0 1px 2px rgba(0,0,0,0.6);
 }
 
+/* Glow escuro sutil para legibilidade sobre fundos muito claros */
+.dark-glow {
+  box-shadow: 0 0 10px rgba(0,0,0,0.15);
+}
+
+/* Glow escuro aplicado como sombra de texto (mais discreto) */
+.text-glow-dark {
+  text-shadow: 0 1px 3px rgba(0,0,0,0.28);
+}
+
+/* Bloqueia seleção de texto dentro do container */
+.no-select, .no-select * {
+  user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+}
+
+/* Remove a cor do cursor de texto (caret) */
+.no-caret {
+  caret-color: transparent;
+}
+
 /* Remove caret de digitação em elementos não editáveis */
 .no-caret { caret-color: transparent; }
 

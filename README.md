@@ -34,6 +34,24 @@ Visualizador 3D com camadas esféricas, controles de luz e modo tela cheia. Incl
   - Implementa zoom por FOV (`FovZoom`): ajuste manual em `minFov`, `maxFov`, `sensitivity`. Segure Shift para acelerar.
   - Modo desenvolvedor: captura de cliques para criar hotspots na esfera e abre menu flutuante para associar luzes.
 
+- `src/main.jsx`
+  - Inicializa React com `BrowserRouter` e monta `App` em `#root`.
+
+- `src/App.jsx`
+  - Define as rotas principais (`/` → Landing, `/viewer` → Viewer) e fallback.
+
+- `src/components/UserPanel.jsx`
+  - Painel lateral do usuário; inclui slider "Luz do Dia", botões e abertura do modal de Ajustes.
+
+- `src/components/SliderBar.jsx`
+  - Componente de slider unificado com barra de progresso visível e input range invisível.
+
+- `src/index.css`
+  - Utilitários `.glass`, `.no-select`, `.no-caret` e estilos dos sliders (espessura, cores, hover).
+
+- `vercel.json`
+  - Configura build Vite e `rewrites` para `/viewer` em produção.
+
 - `src/components/LightControls.jsx`
 - HUD colapsável com sliders (0–100) usando fallback `values[f] ?? 50`.
 - Toggle "Imagem FINAL" estilo iOS, menor e com cores compatíveis com os sliders (cinza). Inclui sombras e `text-shadow` para legibilidade.
@@ -59,13 +77,26 @@ Visualizador 3D com camadas esféricas, controles de luz e modo tela cheia. Incl
 
 ## Detalhes de UI e Interações
 
-- Botões com sombra para visibilidade em fundo branco.
+- Botões com sombra para visibilidade em fundo branco e glow escuro sutil (`.dark-glow`).
+  - Ícones dentro dos botões agora também recebem glow de texto (`.text-glow-dark`) para legibilidade consistente.
 - Fullscreen: botão no canto inferior direito é hover-only e alterna entrada/saída.
 - Ícones Bootstrap: `bi-aspect-ratio` e `bi-box-arrow-in-down-left`.
 - Toggle "Imagem FINAL": menor, com cores dos sliders (cinza), desligado por padrão.
 - Toggle "Adicionar pontos": quando ativado, cliques dentro do panorama criam esferas clicáveis (hotspots) para associação de luzes.
   - Em modo desenvolvedor, os hotspots aparecem em azul com opacidade.
   - Fora do modo, ficam transparentes (continuam clicáveis).
+ - Modal "Ajustes avançados":
+  - Renderizado via Portal diretamente em `document.body` para evitar problemas de stacking context, overlays e Quirks Mode.
+  - Z-index elevado (`z-[9999]`) e `pointer-events: auto` para interatividade confiável.
+  - Fallback de posição visível (`top/left = 20px`); após medir dimensões, centraliza com `top/left` sem `translate(-50%, -50%)`.
+  - Arrasto pelas bordas (faixas de 3px) sem interferir em sliders e botões internos.
+  - Posição é limitada à viewport com margem de 20px.
+  - Seleção de texto/caret é bloqueada durante o arrasto (`.no-select`, `.no-caret`).
+  - Atalhos: tecla `A` abre; `Esc` fecha.
+
+### Nota sobre Quirks Mode
+
+- Caso veja o alerta de Quirks Mode no console, verifique que a primeira linha do `index.html` é `<!DOCTYPE html>` e que o servidor não está injetando HTML anterior ao DOCTYPE. Quirks Mode pode quebrar posicionamentos (`fixed`, `top/left`) e causar comportamentos inesperados.
 
 ## Notas de Zoom
 
@@ -73,6 +104,17 @@ Visualizador 3D com camadas esféricas, controles de luz e modo tela cheia. Incl
   - Ajuste `minFov` (zoom-in mais forte), `maxFov` (zoom-out maior) e `sensitivity` (passo por rolagem) no componente `FovZoom` em `Viewer.jsx`.
   - Segure Shift para acelerar o zoom.
 - Damping: `enableDamping: true` e `dampingFactor: 0.06` para suavidade nos movimentos.
+
+### Padronização dos Sliders e Legibilidade
+
+- Sliders redesenhados (`SliderBar`) com barra de progresso visível no tom cinza dos toggles (`bg-gray-400/70`).
+- Fundo translúcido com leve blur e borda sutil (`bg-white/12`, `border-white/15`).
+- Glow escuro quase transparente (`.dark-glow`) aplicado para melhor legibilidade em fundos muito claros.
+- Efeito hover consistente (`hover:bg-white/16`, `hover:border-white/20`).
+
+### Centralização do Modal de Ajustes
+
+- Janela de Ajustes Avançados agora aparece centralizada usando `transform: translate(-50%, -50%)` com `top/left` em coordenadas de centro da viewport.
 
 ## Modo Desenvolvedor e Hotspots
 
@@ -144,10 +186,17 @@ Visualizador 3D com camadas esféricas, controles de luz e modo tela cheia. Incl
 - Layout padronizado do painel do usuário: o espaçamento dos sliders compactos foi ajustado para se manter consistente mesmo quando há 0 ou 1 luz dimerizável.
 - Ajustes avançados: botão de "Ajustes" no painel do usuário abre uma janela com sliders de Temperatura, Saturação, Contraste, Gama, Highlight Burn e Redução de Ruído. As alterações de Saturação/Contraste/Gama/Highlight e Redução de Ruído são aplicadas globalmente via filtros CSS no Canvas.
 - Sliders com arestas mais suaves e contraste aumentado: elementos brancos utilizam ~50% de opacidade; trilhas cinzas foram escurecidas com ~70% de opacidade para melhorar a legibilidade.
+ - Sliders redesenhados: Ajustes, Luzes dimerizáveis e Menu do desenvolvedor usam um componente unificado com barra de progresso visível (bg branco translúcido, blur leve, borda), e um `input range` invisível por cima — o mesmo estilo de referência do slider da Luz do Dia.
  - Textos com sombra no painel do desenvolvedor: "Compactar", "Salvar config" e "Baixar preset" recebem `text-shadow` para melhor legibilidade.
  - Preset inclui alvos da Luz do Dia: o arquivo `viewerState.json` gerado agora contém `daylightTargets` para persistir quais luzes são afetadas pelo slider "Luz do Dia".
  - Janela de ajustes sem blur: o overlay não aplica desfoque ao ambiente, permitindo ajustar a imagem com precisão.
- - Janela de ajustes centralizada e arrastável: surge no centro da página, pode ser movida para qualquer canto e não escurece/oculta o restante da interface.
+- Janela de ajustes centralizada e arrastável: surge no centro da página, pode ser movida para qualquer canto e não escurece/oculta o restante da interface.
+  - Arraste sem seleção: durante o arraste, a seleção de texto é bloqueada e restaurada ao soltar, evitando comportamento estranho de selecionar textos e sliders.
+  - Container do modal com `select-none` para impedir seleção acidental de conteúdo.
+
+### Painel do Usuário
+
+- Espaçamento entre o slider de Luz do Dia e os botões é ajustável via constante `DAYLIGHT_BUTTONS_GAP_PX` em `src/components/UserPanel.jsx` (comentado no código).
  - Arraste de hotspots contínuo: o ponto segue o cursor mesmo fora da sua área até o momento de soltar o mouse (mouseup).
  - Sombra aplicada amplamente aos textos: adicionamos `text-shadow` nas principais superfícies (Landing, modal de Ajustes e painéis) para legibilidade superior em fundos claros e com efeitos.
  - Movimento da câmera com amortecimento elástico: reduzimos a `rotateSpeed` e aumentamos o `dampingFactor` enquanto um hotspot está sendo arrastado, deixando a esfera acompanhar com suavidade e sem ultrapassar os pontos.

@@ -1,9 +1,11 @@
 import { Canvas, useThree } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import SphereLayer from '../components/SphereLayer'
 import LightControls from '../components/LightControls'
 import UserPanel from '../components/UserPanel'
+import SliderBar from '../components/SliderBar'
 import Hotspot from '../components/Hotspot'
 import { sortLights, sanitizeLabel } from '../lib/utils'
 import * as THREE from 'three'
@@ -29,9 +31,10 @@ const [values, setValues] = useState({}) // intensidade 0..10 por arquivo
   const [presetData, setPresetData] = useState(null)
   const [adjustmentsOpen, setAdjustmentsOpen] = useState(false)
   const [adjustments, setAdjustments] = useState({ saturation: 1, contrast: 1, gamma: 1, brightness: 1, highlights: 0, denoise: 0 })
-  const [adjustmentsPos, setAdjustmentsPos] = useState(() => ({ x: (typeof window !== 'undefined' ? window.innerWidth / 2 : 400), y: (typeof window !== 'undefined' ? window.innerHeight / 2 : 300) }))
+  const [adjustmentsPos, setAdjustmentsPos] = useState(() => ({ x: 20, y: 20 }))
   const draggingAdjustRef = useRef(false)
   const dragOffsetRef = useRef({ x: 0, y: 0 })
+  const adjustmentsModalRef = useRef(null)
   const [draggingHotspot, setDraggingHotspot] = useState(false)
 
   // Carrega estado salvo imediatamente, antes do manifest, para evitar perda visual após refresh
@@ -50,10 +53,22 @@ const [values, setValues] = useState({}) // intensidade 0..10 por arquivo
     } catch {}
   }, [])
 
-  // Reposiciona o modal de ajustes no centro ao abrir
+  // Reposiciona o modal de ajustes no centro ao abrir usando medidas reais (top/left, sem translate)
   useEffect(() => {
     if (adjustmentsOpen && typeof window !== 'undefined') {
-      setAdjustmentsPos({ x: window.innerWidth / 2, y: window.innerHeight / 2 })
+      // Mede o tamanho do modal após renderização para centralizar precisamente
+      requestAnimationFrame(() => {
+        const el = adjustmentsModalRef.current
+        if (!el) {
+          // Fallback robusto: garante visibilidade próxima ao canto superior esquerdo
+          setAdjustmentsPos({ x: 20, y: 20 })
+          return
+        }
+        const rect = el.getBoundingClientRect()
+        const x = Math.max(20, Math.min(window.innerWidth - 20 - rect.width, window.innerWidth / 2 - rect.width / 2))
+        const y = Math.max(20, Math.min(window.innerHeight - 20 - rect.height, window.innerHeight / 2 - rect.height / 2))
+        setAdjustmentsPos({ x, y })
+      })
     }
   }, [adjustmentsOpen])
 
@@ -61,7 +76,10 @@ const [values, setValues] = useState({}) // intensidade 0..10 por arquivo
   useEffect(() => {
     const onMove = (e) => {
       if (!draggingAdjustRef.current) return
-      setAdjustmentsPos(prev => ({ x: e.clientX - dragOffsetRef.current.x, y: e.clientY - dragOffsetRef.current.y }))
+      const margin = 20
+      const x = Math.min(window.innerWidth - margin, Math.max(margin, e.clientX - dragOffsetRef.current.x))
+      const y = Math.min(window.innerHeight - margin, Math.max(margin, e.clientY - dragOffsetRef.current.y))
+      setAdjustmentsPos({ x, y })
     }
     const onUp = () => { draggingAdjustRef.current = false }
     window.addEventListener('pointermove', onMove)
@@ -70,6 +88,31 @@ const [values, setValues] = useState({}) // intensidade 0..10 por arquivo
       window.removeEventListener('pointermove', onMove)
       window.removeEventListener('pointerup', onUp)
     }
+  }, [])
+
+  // Restaura a seleção de texto após qualquer pointerup (caso ocorra fora do header)
+  useEffect(() => {
+    const onUpRestore = () => {
+      if (typeof document !== 'undefined') document.body.style.userSelect = ''
+    }
+    window.addEventListener('pointerup', onUpRestore)
+    return () => window.removeEventListener('pointerup', onUpRestore)
+  }, [])
+
+  // Atalho de teclado: abrir Ajustes (A) e fechar com Escape
+  useEffect(() => {
+    const onKey = (e) => {
+      const k = (e.key || '').toLowerCase()
+      if (k === 'a') {
+        setAdjustmentsOpen(true)
+        // opcional: log para diagnóstico
+        console.debug('Ajustes: abrir via atalho de teclado (A)')
+      } else if (k === 'escape') {
+        setAdjustmentsOpen(false)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
   }, [])
 
   // Auto-carregamento de preset se existir (prioriza preset sobre localStorage e defaults)
@@ -467,20 +510,73 @@ state.gl.toneMapping = THREE.NoToneMapping
         onUpdateDaylightTargets={(targets) => setDaylightTargets(targets)}
       />
 
-      {/* Janela flutuante de Ajustes Avançados */}
-      {adjustmentsOpen && (
-        <>
-          {/* Janela flutuante centralizada, sem escurecer o restante da página */}
+      {/* Janela flutuante de Ajustes Avançados via Portal no body */}
+      {adjustmentsOpen && createPortal(
+        (
           <div
-            className="fixed w-80 glass rounded-2xl p-4 z-50 shadow-2xl shadow-black/40"
+            ref={adjustmentsModalRef}
+            className="fixed w-80 glass rounded-2xl p-4 z-[9999] pointer-events-auto shadow-2xl shadow-black/40 dark-glow text-shadow select-none no-caret no-select"
             style={{ top: `${adjustmentsPos.y}px`, left: `${adjustmentsPos.x}px` }}
           >
+            {/* Área de arraste nas bordas (não interfere em sliders/botões) */}
+            <div className="pointer-events-none absolute inset-0">
+              {/* Topo */}
+              <div
+                className="absolute top-0 left-0 right-0 h-3 pointer-events-auto cursor-move"
+                onPointerDown={(e) => {
+                  e.preventDefault(); e.stopPropagation();
+                  draggingAdjustRef.current = true
+                  const rect = e.currentTarget.parentElement.getBoundingClientRect()
+                  dragOffsetRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top }
+                  if (typeof document !== 'undefined') document.body.style.userSelect = 'none'
+                }}
+              />
+              {/* Base */}
+              <div
+                className="absolute bottom-0 left-0 right-0 h-3 pointer-events-auto cursor-move"
+                onPointerDown={(e) => {
+                  e.preventDefault(); e.stopPropagation();
+                  draggingAdjustRef.current = true
+                  const rect = e.currentTarget.parentElement.getBoundingClientRect()
+                  dragOffsetRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top }
+                  if (typeof document !== 'undefined') document.body.style.userSelect = 'none'
+                }}
+              />
+              {/* Esquerda */}
+              <div
+                className="absolute top-0 bottom-0 left-0 w-3 pointer-events-auto cursor-move"
+                onPointerDown={(e) => {
+                  e.preventDefault(); e.stopPropagation();
+                  draggingAdjustRef.current = true
+                  const rect = e.currentTarget.parentElement.getBoundingClientRect()
+                  dragOffsetRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top }
+                  if (typeof document !== 'undefined') document.body.style.userSelect = 'none'
+                }}
+              />
+              {/* Direita */}
+              <div
+                className="absolute top-0 bottom-0 right-0 w-3 pointer-events-auto cursor-move"
+                onPointerDown={(e) => {
+                  e.preventDefault(); e.stopPropagation();
+                  draggingAdjustRef.current = true
+                  const rect = e.currentTarget.parentElement.getBoundingClientRect()
+                  dragOffsetRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top }
+                  if (typeof document !== 'undefined') document.body.style.userSelect = 'none'
+                }}
+              />
+            </div>
             <div
               className="flex items-center justify-between mb-2 cursor-move"
               onPointerDown={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
                 draggingAdjustRef.current = true
                 const rect = e.currentTarget.parentElement.getBoundingClientRect()
                 dragOffsetRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top }
+                if (typeof document !== 'undefined') document.body.style.userSelect = 'none'
+              }}
+              onPointerUp={() => {
+                if (typeof document !== 'undefined') document.body.style.userSelect = ''
               }}
             >
               <div className="text-white/90 text-sm font-medium text-shadow">Ajustes avançados</div>
@@ -489,38 +585,39 @@ state.gl.toneMapping = THREE.NoToneMapping
             <div className="space-y-3">
               <div>
                 <div className="text-[11px] text-neutral-200 mb-1 text-shadow">Temperatura de cor</div>
-                <input type="range" min={-40} max={40} step={1} value={temperature} onChange={e => setTemperature(parseFloat(e.target.value))} className="w-full range-thick" style={{ '--progress': `${(temperature + 40) / 80 * 100}%` }} />
+                <SliderBar value={temperature} min={-40} max={40} step={1} onChange={v => setTemperature(v)} height={8} ariaLabel="Temperatura de cor" />
               </div>
               <div>
                 <div className="text-[11px] text-neutral-200 mb-1 text-shadow">Saturação</div>
-                <input type="range" min={0} max={2} step={0.01} value={adjustments.saturation} onChange={e => setAdjustments(a => ({ ...a, saturation: parseFloat(e.target.value) }))} className="w-full range-thick" style={{ '--progress': `${(adjustments.saturation / 2) * 100}%` }} />
+                <SliderBar value={adjustments.saturation} min={0} max={2} step={0.01} onChange={v => setAdjustments(a => ({ ...a, saturation: v }))} height={8} ariaLabel="Saturação" />
               </div>
               <div>
                 <div className="text-[11px] text-neutral-200 mb-1 text-shadow">Contraste</div>
-                <input type="range" min={0.5} max={2} step={0.01} value={adjustments.contrast} onChange={e => setAdjustments(a => ({ ...a, contrast: parseFloat(e.target.value) }))} className="w-full range-thick" style={{ '--progress': `${((adjustments.contrast - 0.5) / 1.5) * 100}%` }} />
+                <SliderBar value={adjustments.contrast} min={0.5} max={2} step={0.01} onChange={v => setAdjustments(a => ({ ...a, contrast: v }))} height={8} ariaLabel="Contraste" />
               </div>
               <div>
                 <div className="text-[11px] text-neutral-200 mb-1 text-shadow">Gama</div>
-                <input type="range" min={0.5} max={2} step={0.01} value={adjustments.gamma} onChange={e => setAdjustments(a => ({ ...a, gamma: parseFloat(e.target.value) }))} className="w-full range-thick" style={{ '--progress': `${((adjustments.gamma - 0.5) / 1.5) * 100}%` }} />
+                <SliderBar value={adjustments.gamma} min={0.5} max={2} step={0.01} onChange={v => setAdjustments(a => ({ ...a, gamma: v }))} height={8} ariaLabel="Gama" />
               </div>
               <div>
                 <div className="text-[11px] text-neutral-200 mb-1 text-shadow">Brilho</div>
-                <input type="range" min={0.5} max={1.5} step={0.01} value={adjustments.brightness} onChange={e => setAdjustments(a => ({ ...a, brightness: parseFloat(e.target.value) }))} className="w-full range-thick" style={{ '--progress': `${((adjustments.brightness - 0.5) / 1.0) * 100}%` }} />
+                <SliderBar value={adjustments.brightness} min={0.5} max={1.5} step={0.01} onChange={v => setAdjustments(a => ({ ...a, brightness: v }))} height={8} ariaLabel="Brilho" />
               </div>
               <div>
                 <div className="text-[11px] text-neutral-200 mb-1 text-shadow">Highlight burn</div>
-                <input type="range" min={0} max={1} step={0.01} value={adjustments.highlights} onChange={e => setAdjustments(a => ({ ...a, highlights: parseFloat(e.target.value) }))} className="w-full range-thick" style={{ '--progress': `${(adjustments.highlights) * 100}%` }} />
+                <SliderBar value={adjustments.highlights} min={0} max={1} step={0.01} onChange={v => setAdjustments(a => ({ ...a, highlights: v }))} height={8} ariaLabel="Highlight burn" />
               </div>
               <div>
                 <div className="text-[11px] text-neutral-200 mb-1 text-shadow">Redução de ruído</div>
-                <input type="range" min={0} max={4} step={0.1} value={adjustments.denoise} onChange={e => setAdjustments(a => ({ ...a, denoise: parseFloat(e.target.value) }))} className="w-full range-thick" style={{ '--progress': `${(adjustments.denoise / 4) * 100}%` }} />
+                <SliderBar value={adjustments.denoise} min={0} max={4} step={0.1} onChange={v => setAdjustments(a => ({ ...a, denoise: v }))} height={8} ariaLabel="Redução de ruído" />
               </div>
               <div className="pt-2 flex justify-end">
                 <button className="px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-xs text-shadow" onClick={() => { setAdjustments({ saturation: 1, contrast: 1, gamma: 1, brightness: 1, highlights: 0, denoise: 0 }); setTemperature(0) }}>restaurar padrão</button>
               </div>
             </div>
           </div>
-        </>
+        ),
+        document.body
       )}
 
       {/* Painel do Usuário: Luz do Dia + sliders compactos */}

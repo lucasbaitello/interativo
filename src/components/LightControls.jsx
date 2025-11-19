@@ -1,4 +1,5 @@
 import { sanitizeLabel, groupByNumber } from '../lib/utils'
+import SliderBar from './SliderBar'
 
 // Painel lateral com sliders 0..10 por luz, agrupados por numeração
 // Comentário: ajuste estilos e posicionamento do painel conforme a identidade visual.
@@ -20,7 +21,7 @@ export default function LightControls({ files, values, onChange, showFinal, onTo
           <>
             <button
               onClick={onToggleCollapsed}
-              className={'px-2 py-1 rounded-lg bg-white/10 hover:bg-white/20 transition text-xs text-shadow'}
+              className={'px-2 py-1 rounded-lg bg-white/12 hover:bg-white/20 transition text-xs text-shadow dark-glow'}
               aria-label={'Colapsar controles'}
             >
               Compactar
@@ -47,7 +48,7 @@ export default function LightControls({ files, values, onChange, showFinal, onTo
                   })
                   .catch(e => alert(`Erro ao salvar: ${e}`))
               }}
-              className={'px-2 py-1 rounded-lg bg-white/10 hover:bg-white/20 transition text-xs text-shadow'}
+              className={'px-2 py-1 rounded-lg bg-white/12 hover:bg-white/20 transition text-xs text-shadow dark-glow'}
               aria-label={'Salvar configurações no projeto'}
               title={'Salvar config em public/config/viewerState.json'}
             >
@@ -67,7 +68,7 @@ export default function LightControls({ files, values, onChange, showFinal, onTo
                 document.body.removeChild(a)
                 URL.revokeObjectURL(url)
               }}
-              className={'ml-2 px-2 py-1 rounded-lg bg-white/10 hover:bg-white/20 transition text-xs text-shadow'}
+              className={'ml-2 px-2 py-1 rounded-lg bg-white/12 hover:bg-white/20 transition text-xs text-shadow dark-glow'}
               aria-label={'Baixar preset local'}
               title={'Baixar viewerState.json para colocar em public/presets/<ambiente>/'}
             >
@@ -162,16 +163,17 @@ export default function LightControls({ files, values, onChange, showFinal, onTo
 
                       {/* Linha dedicada: slider mais espesso para precisão e valor ao lado */}
                       <div className="flex items-center gap-3">
-                        <input
-                          type="range"
-                          min={0}
-                          max={100}
-                          step={1}
-                          value={values[f] ?? 50}
-                          onChange={e => onChange(f, parseFloat(e.target.value))}
-                          className="flex-1 range-thick"
-                          style={{ '--progress': `${values[f] ?? 50}%` }}
-                        />
+                        <div className="flex-1 dark-glow">
+                          <SliderBar
+                            value={values[f] ?? 50}
+                            min={0}
+                            max={100}
+                            step={1}
+                            onChange={(v) => onChange(f, v)}
+                            height={10}
+                            ariaLabel={`Ajustar ${sanitizeLabel(f)}`}
+                          />
+                        </div>
                         <span className="text-[10px] text-neutral-300 w-12 text-right">{Math.round(values[f] ?? 50)}%</span>
                       </div>
 

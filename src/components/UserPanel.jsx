@@ -1,4 +1,8 @@
 import { sanitizeLabel } from '../lib/utils'
+import SliderBar from './SliderBar'
+
+// Ajuste aqui o espaçamento horizontal entre o slider de Luz do Dia e os botões
+const DAYLIGHT_BUTTONS_GAP_PX = 18
 
 export default function UserPanel({ open, onToggle, values, onChange, lightsState, onPresetAll, onTurnOffExceptDaylight, onOpenAdjustments }) {
   const dimmables = Object.keys(lightsState || {}).filter(f => lightsState[f]?.dimmerizavel)
@@ -27,7 +31,8 @@ export default function UserPanel({ open, onToggle, values, onChange, lightsStat
           <>
             {/* Slider vertical de Luz do Dia com ações rápidas à direita */}
             <div className="mb-4">
-              <div className="flex items-center justify-center gap-2">
+              {/* Ajuste de espaçamento entre slider vertical e botões à direita */}
+              <div className="flex items-center justify-center" style={{ gap: `${DAYLIGHT_BUTTONS_GAP_PX}px` }}>
                 {/* Centro: slider vertical */}
                 <div className="flex flex-col items-center">
                   <i className="bi bi-sun text-white/70 text-xs mb-1 pointer-events-none cursor-default" />
@@ -46,28 +51,30 @@ export default function UserPanel({ open, onToggle, values, onChange, lightsStat
                 {/* Direita: ícones (preset on, off, ajustes) */}
                 <div className="flex flex-col items-center gap-2">
                   <button
-                    className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center shadow"
+                    className="w-7 h-7 rounded-full bg-white/12 hover:bg-white/20 flex items-center justify-center shadow dark-glow"
                     title="Acender todas com preset"
                     aria-label="Acender todas com preset"
                     onClick={onPresetAll}
                   >
-                    <i className="bi bi-lightbulb-fill text-white text-sm" />
+                    <i className="bi bi-lightbulb-fill text-white text-sm text-glow-dark" />
                   </button>
                   <button
-                    className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center shadow"
+                    className="w-7 h-7 rounded-full bg-white/12 hover:bg-white/20 flex items-center justify-center shadow dark-glow"
                     title="Apagar todas exceto luz do dia"
                     aria-label="Apagar todas exceto luz do dia"
                     onClick={onTurnOffExceptDaylight}
                   >
-                    <i className="bi bi-lightbulb-off text-white text-sm" />
+                    <i className="bi bi-lightbulb-off text-white text-sm text-glow-dark" />
                   </button>
                   <button
-                    className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center shadow"
+                    className="w-7 h-7 rounded-full bg-white/12 hover:bg-white/20 flex items-center justify-center shadow dark-glow"
                     title="Abrir ajustes avançados"
                     aria-label="Abrir ajustes avançados"
                     onClick={onOpenAdjustments}
+                    onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); onOpenAdjustments && onOpenAdjustments(); }}
+                    type="button"
                   >
-                    <i className="bi bi-sliders text-white text-sm" />
+                    <i className="bi bi-sliders text-white text-sm text-glow-dark" />
                   </button>
                 </div>
               </div>
@@ -77,17 +84,16 @@ export default function UserPanel({ open, onToggle, values, onChange, lightsStat
             <div className={dimmables.length ? 'space-y-3 pb-6 w-full' : 'pb-2 w-full'}>
               {dimmables.map((f) => (
                 <div key={f}>
-                  <div className="text-[11px] truncate text-neutral-200 cursor-default">{sanitizeLabel(f)}</div>
+                  <div className="text-[11px] truncate text-neutral-200 cursor-default text-shadow">{sanitizeLabel(f)}</div>
                   <div className="flex items-center gap-2">
-                    <input
-                      type="range"
+                    <SliderBar
+                      value={values[f] ?? 50}
                       min={0}
                       max={100}
                       step={1}
-                      value={values[f] ?? 50}
-                      onChange={e => onChange(f, parseFloat(e.target.value))}
-                      className="w-full range-thin"
-                      style={{ '--progress': `${values[f] ?? 50}%` }}
+                      onChange={(v) => onChange(f, v)}
+                      height={6}
+                      ariaLabel={`Ajustar ${sanitizeLabel(f)}`}
                     />
                     <span className="text-[10px] text-neutral-300 w-8 text-right">{Math.round(values[f] ?? 50)}%</span>
                   </div>
