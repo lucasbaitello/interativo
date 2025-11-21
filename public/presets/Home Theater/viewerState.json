@@ -1,0 +1,349 @@
+{
+  "values": {
+    "0 - Dome.png": 58,
+    "0 - reforco do sol.png": 58,
+    "0 -cortina.png": 58,
+    "1 - Luminria de chao.png": 47,
+    "2 - IES spot led duplo.png": 8,
+    "2 - spot led duplo.png": 100,
+    "2 - spot led single.png": 100,
+    "2 -IES spot led single.png": 29,
+    "3 - sanca cortina 2.png": 50,
+    "3 - sanka cortina.png": 50,
+    "4 - fita led - linear do hall.png": 66,
+    "4 - fita led - moldura.png": 54,
+    "4 - fita led - prateleira tv.png": 90,
+    "4 - fita led - prateleira varanda.png": 84,
+    "5 - luminaria de cabeceira.png": 80,
+    "__daylight": 58
+  },
+  "lightsState": {
+    "0 - Dome.png": {
+      "nome": "DOME",
+      "estado": true,
+      "dimmerizavel": false,
+      "valor": 50,
+      "pontos": []
+    },
+    "0 - reforco do sol.png": {
+      "nome": "REFORCO DO SOL",
+      "estado": true,
+      "dimmerizavel": true,
+      "valor": 50,
+      "pontos": []
+    },
+    "0 -cortina.png": {
+      "nome": "CORTINA",
+      "estado": true,
+      "dimmerizavel": false,
+      "valor": 50,
+      "pontos": []
+    },
+    "1 - Luminria de chao.png": {
+      "nome": "LUMINRIA DE CHAO",
+      "estado": true,
+      "dimmerizavel": false,
+      "valor": 47,
+      "pontos": [
+        "0cb91185-9484-4470-b8d5-8de3f2f75cab",
+        "0dccac5c-a5fb-4caf-8d03-54c3fa87d1d3"
+      ]
+    },
+    "2 - IES spot led duplo.png": {
+      "nome": "IES SPOT LED DUPLO",
+      "estado": true,
+      "dimmerizavel": false,
+      "valor": 8,
+      "pontos": [
+        "f533e552-4dc5-49d4-9e0a-ff42ef002c6f",
+        "c25d73cd-3969-4dc8-86b0-573c3664f8e7",
+        "3ccc043e-0ded-4450-8d64-a522d71f012b",
+        "00efd6b0-f816-4eea-b33e-1b129db45bc2",
+        "64839678-b373-4681-838e-d6636453a8cb"
+      ]
+    },
+    "2 - spot led duplo.png": {
+      "nome": "SPOT LED DUPLO",
+      "estado": true,
+      "dimmerizavel": false,
+      "valor": 100,
+      "pontos": [
+        "f533e552-4dc5-49d4-9e0a-ff42ef002c6f",
+        "c25d73cd-3969-4dc8-86b0-573c3664f8e7",
+        "3ccc043e-0ded-4450-8d64-a522d71f012b",
+        "00efd6b0-f816-4eea-b33e-1b129db45bc2",
+        "64839678-b373-4681-838e-d6636453a8cb"
+      ]
+    },
+    "2 - spot led single.png": {
+      "nome": "SPOT LED SINGLE",
+      "estado": true,
+      "dimmerizavel": false,
+      "valor": 100,
+      "pontos": [
+        "f533e552-4dc5-49d4-9e0a-ff42ef002c6f",
+        "c25d73cd-3969-4dc8-86b0-573c3664f8e7",
+        "3ccc043e-0ded-4450-8d64-a522d71f012b",
+        "00efd6b0-f816-4eea-b33e-1b129db45bc2",
+        "64839678-b373-4681-838e-d6636453a8cb"
+      ]
+    },
+    "2 -IES spot led single.png": {
+      "nome": "IES SPOT LED SINGLE",
+      "estado": true,
+      "dimmerizavel": false,
+      "valor": 29,
+      "pontos": [
+        "f533e552-4dc5-49d4-9e0a-ff42ef002c6f",
+        "c25d73cd-3969-4dc8-86b0-573c3664f8e7",
+        "3ccc043e-0ded-4450-8d64-a522d71f012b",
+        "00efd6b0-f816-4eea-b33e-1b129db45bc2",
+        "64839678-b373-4681-838e-d6636453a8cb"
+      ]
+    },
+    "3 - sanca cortina 2.png": {
+      "nome": "SANCA CORTINA 2",
+      "estado": true,
+      "dimmerizavel": false,
+      "valor": 50,
+      "pontos": [
+        "567d4cba-d870-49c1-ac20-c7dba8b9efe5"
+      ]
+    },
+    "3 - sanka cortina.png": {
+      "nome": "SANKA CORTINA",
+      "estado": true,
+      "dimmerizavel": false,
+      "valor": 50,
+      "pontos": [
+        "567d4cba-d870-49c1-ac20-c7dba8b9efe5"
+      ]
+    },
+    "4 - fita led - linear do hall.png": {
+      "nome": "FITA LED   LINEAR DO HALL",
+      "estado": true,
+      "dimmerizavel": false,
+      "valor": 66,
+      "pontos": [
+        "567d4cba-d870-49c1-ac20-c7dba8b9efe5"
+      ]
+    },
+    "4 - fita led - moldura.png": {
+      "nome": "FITA LED   MOLDURA",
+      "estado": true,
+      "dimmerizavel": false,
+      "valor": 54,
+      "pontos": [
+        "567d4cba-d870-49c1-ac20-c7dba8b9efe5"
+      ]
+    },
+    "4 - fita led - prateleira tv.png": {
+      "nome": "FITA LED   PRATELEIRA TV",
+      "estado": true,
+      "dimmerizavel": false,
+      "valor": 90,
+      "pontos": [
+        "567d4cba-d870-49c1-ac20-c7dba8b9efe5"
+      ]
+    },
+    "4 - fita led - prateleira varanda.png": {
+      "nome": "FITA LED   PRATELEIRA VARANDA",
+      "estado": true,
+      "dimmerizavel": false,
+      "valor": 84,
+      "pontos": [
+        "567d4cba-d870-49c1-ac20-c7dba8b9efe5"
+      ]
+    },
+    "5 - luminaria de cabeceira.png": {
+      "nome": "LUMINARIA DE CABECEIRA",
+      "estado": true,
+      "dimmerizavel": false,
+      "valor": 80,
+      "pontos": [
+        "0cb91185-9484-4470-b8d5-8de3f2f75cab",
+        "9ae18ba1-b20e-422e-916f-89ec35bf7b7d"
+      ]
+    }
+  },
+  "hotspots": [
+    {
+      "id": "68d71ada-3925-43f9-accd-e687fe5a3f21",
+      "position": [
+        -9.270019073944248,
+        -3.220224533987263,
+        -1.922732513746095
+      ],
+      "lights": [],
+      "shape": "sphere",
+      "size": 0.6,
+      "type": "nav",
+      "linkEnv": "Sala de Jantar",
+      "icon": "caret-down-fill",
+      "color": "#cdf9df",
+      "markerOpacity": 0
+    },
+    {
+      "id": "f533e552-4dc5-49d4-9e0a-ff42ef002c6f",
+      "position": [
+        3.331896695087484,
+        -3.2951199742959667,
+        8.834061849922767
+      ],
+      "lights": [
+        "2 - IES spot led duplo.png",
+        "2 - spot led duplo.png",
+        "2 - spot led single.png",
+        "2 -IES spot led single.png"
+      ],
+      "shape": "box",
+      "size": 0.2,
+      "type": "light",
+      "sizeX": 0.3,
+      "sizeY": 0.15
+    },
+    {
+      "id": "567d4cba-d870-49c1-ac20-c7dba8b9efe5",
+      "position": [
+        3.313110611723377,
+        -3.4816507444783795,
+        8.756366931158915
+      ],
+      "lights": [
+        "3 - sanca cortina 2.png",
+        "3 - sanka cortina.png",
+        "4 - fita led - linear do hall.png",
+        "4 - fita led - moldura.png",
+        "4 - fita led - prateleira tv.png",
+        "4 - fita led - prateleira varanda.png"
+      ],
+      "shape": "box",
+      "size": 0.2,
+      "type": "light",
+      "sizeX": 0.3
+    },
+    {
+      "id": "0cb91185-9484-4470-b8d5-8de3f2f75cab",
+      "position": [
+        3.0295598969823074,
+        -3.3046259160510183,
+        8.92648440077367
+      ],
+      "lights": [
+        "1 - Luminria de chao.png",
+        "5 - luminaria de cabeceira.png"
+      ],
+      "shape": "box",
+      "size": 0.2,
+      "type": "light",
+      "sizeY": 0.2,
+      "sizeX": 0.3
+    },
+    {
+      "id": "0dccac5c-a5fb-4caf-8d03-54c3fa87d1d3",
+      "position": [
+        8.319706808806544,
+        -0.030532364741547136,
+        -5.545886530274759
+      ],
+      "lights": [
+        "1 - Luminria de chao.png"
+      ],
+      "shape": "sphere",
+      "size": 0.6,
+      "type": "light"
+    },
+    {
+      "id": "9ae18ba1-b20e-422e-916f-89ec35bf7b7d",
+      "position": [
+        -9.637052723017037,
+        -1.6897926713521518,
+        2.0291736161828777
+      ],
+      "lights": [
+        "5 - luminaria de cabeceira.png"
+      ],
+      "shape": "sphere",
+      "size": 0.35,
+      "type": "light"
+    },
+    {
+      "id": "c25d73cd-3969-4dc8-86b0-573c3664f8e7",
+      "position": [
+        6.817897245682734,
+        6.99550511524332,
+        2.1399031122731538
+      ],
+      "lights": [
+        "2 - IES spot led duplo.png",
+        "2 - spot led duplo.png",
+        "2 - spot led single.png",
+        "2 -IES spot led single.png"
+      ],
+      "shape": "box",
+      "size": 0.6,
+      "type": "light",
+      "sizeX": 0.85
+    },
+    {
+      "id": "3ccc043e-0ded-4450-8d64-a522d71f012b",
+      "position": [
+        6.619753384423461,
+        6.84548996245374,
+        3.023875732542382
+      ],
+      "lights": [
+        "2 - IES spot led duplo.png",
+        "2 - spot led duplo.png",
+        "2 - spot led single.png",
+        "2 -IES spot led single.png"
+      ],
+      "shape": "box",
+      "size": 0.45,
+      "type": "light",
+      "sizeY": 0.85,
+      "sizeX": 0.9
+    },
+    {
+      "id": "00efd6b0-f816-4eea-b33e-1b129db45bc2",
+      "position": [
+        -4.144574056892048,
+        4.089032059142464,
+        -8.119065897530922
+      ],
+      "lights": [
+        "2 - IES spot led duplo.png",
+        "2 - spot led duplo.png",
+        "2 - spot led single.png",
+        "2 -IES spot led single.png"
+      ],
+      "shape": "sphere",
+      "size": 0.3,
+      "type": "light"
+    },
+    {
+      "id": "64839678-b373-4681-838e-d6636453a8cb",
+      "position": [
+        -8.486896847622146,
+        3.7281633053540375,
+        -3.7272828188981433
+      ],
+      "lights": [
+        "2 - IES spot led duplo.png",
+        "2 - spot led duplo.png",
+        "2 - spot led single.png",
+        "2 -IES spot led single.png"
+      ],
+      "shape": "sphere",
+      "size": 0.4,
+      "type": "light"
+    }
+  ],
+  "debugClick": false,
+  "showFinal": false,
+  "daylightTargets": [
+    "0 - reforco do sol.png",
+    "0 -cortina.png",
+    "0 - Dome.png"
+  ]
+}
