@@ -112,3 +112,8 @@ The 3D rendering is done with `react-three-fiber`. The main viewer component is 
 
 - **Correções de Bugs**:
   - Corrigido um problema onde a propriedade `blending` das camadas de esfera estava recebendo um valor de string inválido. A lógica foi aprimorada para lidar com diferentes modos de mesclagem.
+
+# Versionamento
+
+- **Branch Atual**: `correrpelocerto`
+- **Deploy**: O deploy desta branch para o Vercel pode ser feito após o push para o GitHub. A URL do deploy será gerada automaticamente pelo Vercel.
