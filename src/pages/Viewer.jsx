@@ -1,307 +1,372 @@
-import { Canvas, useThree } from '@react-three/fiber'
-import { OrbitControls } from '@react-three/drei'
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
+import { Canvas, useThree, useFrame } from '@react-three/fiber'
+import { OrbitControls, Line } from '@react-three/drei'
+import { EffectComposer, Bloom } from '@react-three/postprocessing'
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import SphereLayer from '../components/SphereLayer'
 import LightControls from '../components/LightControls'
 import UserPanel from '../components/UserPanel'
 import SliderBar from '../components/SliderBar'
 import Hotspot from '../components/Hotspot'
+import Portal from '../components/Portal'
+import HotspotEditor from '../components/HotspotEditor'
+import LayerManager from '../components/LayerManager'
+import EnvironmentSelector from '../components/EnvironmentSelector'
+import { useEnvironment } from '../hooks/useEnvironment'
 import { sortLights, sanitizeLabel } from '../lib/utils'
 import * as THREE from 'three'
 
+// Componente auxiliar para gerenciar câmera (salvar/carregar)
+function CameraController({ saveTrigger, onSaveCamera, loadData }) {
+  const { camera, gl } = useThree()
+  const controlsRef = useRef()
+
+  // Salvar câmera quando solicitado
+  useEffect(() => {
+    if (saveTrigger > 0) {
+      const pos = camera.position.toArray()
+      // OrbitControls target
+      const target = controlsRef.current?.target?.toArray() || [0, 0, 0]
+      onSaveCamera({ position: pos, target })
+    }
+  }, [saveTrigger, onSaveCamera])
+
+  // Carregar câmera quando loadData mudar
+  useEffect(() => {
+    if (loadData && loadData.camera) {
+      if (loadData.camera.position) {
+        camera.position.fromArray(loadData.camera.position)
+      }
+      if (loadData.camera.target && controlsRef.current) {
+        controlsRef.current.target.fromArray(loadData.camera.target)
+      }
+      camera.updateProjectionMatrix()
+      controlsRef.current?.update()
+    }
+  }, [loadData, camera])
+
+  return <OrbitControls ref={controlsRef} makeDefault enablePan={false} enableZoom={false} zoomSpeed={2.2} rotateSpeed={0.6} enableDamping dampingFactor={0.1} />
+}
+
+// Componente auxiliar para o cursor de desenho
+function DrawingCursor({ isDrawing }) {
+  const { camera, raycaster, pointer } = useThree()
+  const cursorRef = useRef()
+
+  useFrame(() => {
+    if (!isDrawing || !cursorRef.current) return
+
+    raycaster.setFromCamera(pointer, camera)
+    const target = new THREE.Vector3()
+    // Intersectar com uma esfera virtual de raio 10 (mesma do background)
+    const sphere = new THREE.Sphere(new THREE.Vector3(0, 0, 0), 10)
+    const hit = raycaster.ray.intersectSphere(sphere, target)
+
+    if (hit) {
+      cursorRef.current.position.copy(hit)
+      cursorRef.current.lookAt(0, 0, 0) // Apontar para o centro
+    } else {
+      // Fallback se não intersectar (raro dentro da esfera)
+      const v = raycaster.ray.direction.clone().normalize().multiplyScalar(10)
+      cursorRef.current.position.copy(v)
+      cursorRef.current.lookAt(0, 0, 0)
+    }
+  })
+
+  if (!isDrawing) return null
+
+  return (
+    <mesh ref={cursorRef} renderOrder={9999}>
+      <ringGeometry args={[0.1, 0.15, 32]} />
+      <meshBasicMaterial color="yellow" depthTest={false} transparent opacity={0.8} side={THREE.DoubleSide} />
+    </mesh>
+  )
+}
+
 export default function Viewer() {
   const [files, setFiles] = useState([])
-// Personalização: defina valores padrão por arquivo aqui (ex.: 5)
-const [values, setValues] = useState({}) // intensidade 0..10 por arquivo
-  const [showFinal, setShowFinal] = useState(false)
+  const [layers, setLayers] = useState([])
+  const [values, setValues] = useState({})
   const [collapsed, setCollapsed] = useState(true)
   const [isFullscreen, setIsFullscreen] = useState(false)
-  const lastClickRef = useRef(0)
   const [debugClick, setDebugClick] = useState(false)
+  const [showLayerManager, setShowLayerManager] = useState(false)
+
+  // 'lights' = Modo Luzes (Padrão), 'final' = Modo Imagem Final
+  const [viewMode, setViewMode] = useState('lights')
+
+  // Permissão de modo de visualização: 'final_only', 'lights_only', 'both'
+  const [viewModePermission, setViewModePermission] = useState('final_only')
+
+  // Filtros de exibição de hotspots no modo debug
+  const [visibleHotspotTypes, setVisibleHotspotTypes] = useState({
+    switch: true,
+    portal: true,
+    swap: true
+  })
+
   const [hotspots, setHotspots] = useState([])
   const [editingHotspotId, setEditingHotspotId] = useState(null)
-  const [menuSelection, setMenuSelection] = useState({})
   const [lightsState, setLightsState] = useState({})
-  const [daylightTargets, setDaylightTargets] = useState([]) // arquivos controlados pelo slider Luz do Dia
+  const [daylightTargets, setDaylightTargets] = useState([])
   const containerRef = useRef(null)
   const canvasElRef = useRef(null)
   const [userPanelOpen, setUserPanelOpen] = useState(true)
-  const [temperature, setTemperature] = useState(0) // -40..40
+
   const [presetData, setPresetData] = useState(null)
   const [adjustmentsOpen, setAdjustmentsOpen] = useState(false)
-  const [adjustments, setAdjustments] = useState({ saturation: 1, contrast: 1, gamma: 1, brightness: 1, highlights: 0, denoise: 0 })
+  // Ajustes: temperature substitui gamma, bloom adicionado
+  const [adjustments, setAdjustments] = useState({
+    saturation: 1,
+    contrast: 1,
+    brightness: 1,
+    highlights: 0,
+    denoise: 0,
+    temperature: 0,
+    bloomIntensity: 0,
+    bloomRadius: 0
+  })
   const [adjustmentsPos, setAdjustmentsPos] = useState(() => ({ x: 20, y: 20 }))
   const draggingAdjustRef = useRef(false)
   const dragOffsetRef = useRef({ x: 0, y: 0 })
   const adjustmentsModalRef = useRef(null)
   const [draggingHotspot, setDraggingHotspot] = useState(false)
+  const [availableEnvs, setAvailableEnvs] = useState([])
 
-  // Carrega estado salvo imediatamente, antes do manifest, para evitar perda visual após refresh
+  // Estado para desenho de polígono
+  const [isDrawing, setIsDrawing] = useState(false)
+
+  const [saveTrigger, setSaveTrigger] = useState(0)
+  const saveActionType = useRef(null)
+
+  const { currentEnv, envConfig, setCurrentEnv } = useEnvironment()
+
+  // Carregar lista de ambientes
+  useEffect(() => {
+    fetch('/environments.json')
+      .then(r => r.json())
+      .then(setAvailableEnvs)
+      .catch(() => { })
+  }, [])
+
+  // Carregar estado local (UI + ViewMode)
   useEffect(() => {
     try {
       const saved = JSON.parse(localStorage.getItem('viewerState') || '{}')
       if (saved) {
-        if (saved.values) setValues(saved.values)
-        if (saved.lightsState) setLightsState(saved.lightsState)
-        if (Array.isArray(saved.hotspots)) setHotspots(saved.hotspots)
         if (typeof saved.debugClick === 'boolean') setDebugClick(saved.debugClick)
-        if (typeof saved.showFinal === 'boolean') setShowFinal(saved.showFinal)
-        if (Array.isArray(saved.daylightTargets)) setDaylightTargets(saved.daylightTargets)
         if (saved.adjustments) setAdjustments(prev => ({ ...prev, ...saved.adjustments }))
+        if (saved.viewMode) setViewMode(saved.viewMode)
       }
-    } catch {}
+    } catch { }
   }, [])
 
-  // Reposiciona o modal de ajustes no centro ao abrir usando medidas reais (top/left, sem translate)
+  // Salvar estado local
   useEffect(() => {
-    if (adjustmentsOpen && typeof window !== 'undefined') {
-      // Mede o tamanho do modal após renderização para centralizar precisamente
-      requestAnimationFrame(() => {
-        const el = adjustmentsModalRef.current
-        if (!el) {
-          // Fallback robusto: garante visibilidade próxima ao canto superior esquerdo
-          setAdjustmentsPos({ x: 20, y: 20 })
-          return
-        }
-        const rect = el.getBoundingClientRect()
-        const x = Math.max(20, Math.min(window.innerWidth - 20 - rect.width, window.innerWidth / 2 - rect.width / 2))
-        const y = Math.max(20, Math.min(window.innerHeight - 20 - rect.height, window.innerHeight / 2 - rect.height / 2))
-        setAdjustmentsPos({ x, y })
-      })
-    }
-  }, [adjustmentsOpen])
-
-  // Arraste do modal de ajustes (janela flutuante)
-  useEffect(() => {
-    const onMove = (e) => {
-      if (!draggingAdjustRef.current) return
-      const margin = 20
-      const x = Math.min(window.innerWidth - margin, Math.max(margin, e.clientX - dragOffsetRef.current.x))
-      const y = Math.min(window.innerHeight - margin, Math.max(margin, e.clientY - dragOffsetRef.current.y))
-      setAdjustmentsPos({ x, y })
-    }
-    const onUp = () => { draggingAdjustRef.current = false }
-    window.addEventListener('pointermove', onMove)
-    window.addEventListener('pointerup', onUp)
-    return () => {
-      window.removeEventListener('pointermove', onMove)
-      window.removeEventListener('pointerup', onUp)
-    }
-  }, [])
-
-  // Restaura a seleção de texto após qualquer pointerup (caso ocorra fora do header)
-  useEffect(() => {
-    const onUpRestore = () => {
-      if (typeof document !== 'undefined') document.body.style.userSelect = ''
-    }
-    window.addEventListener('pointerup', onUpRestore)
-    return () => window.removeEventListener('pointerup', onUpRestore)
-  }, [])
-
-  // Atalho de teclado: abrir Ajustes (A) e fechar com Escape
-  useEffect(() => {
-    const onKey = (e) => {
-      const k = (e.key || '').toLowerCase()
-      if (k === 'a') {
-        setAdjustmentsOpen(true)
-        // opcional: log para diagnóstico
-        console.debug('Ajustes: abrir via atalho de teclado (A)')
-      } else if (k === 'escape') {
-        setAdjustmentsOpen(false)
+    try {
+      const payload = {
+        debugClick,
+        adjustments,
+        viewMode
       }
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [])
+      localStorage.setItem('viewerState', JSON.stringify(payload))
+    } catch (e) { }
+  }, [debugClick, adjustments, viewMode])
 
-  // Auto-carregamento de preset se existir (prioriza preset sobre localStorage e defaults)
+
+  // Lógica Principal de Carregamento: Manifesto + Preset
   useEffect(() => {
-    let cancelled = false
-    ;(async () => {
+    let cancelled = false;
+
+    const loadData = async () => {
+      // 1. Carregar Manifesto
+      let manifestFiles = []
       try {
-        // Ajuste aqui o caminho do preset padrão
-        // Exemplo: '/presets/luzes/viewerState.json' (coloque seu arquivo lá)
-        const r = await fetch('/presets/luzes/viewerState.json', { cache: 'no-store' })
+        const manifestPath = envConfig?.imgPath ? `${envConfig.imgPath}/manifest.json` : '/manifest.json'
+        const r = await fetch(`${manifestPath}?t=${Date.now()}`)
         if (r.ok) {
-          const preset = await r.json()
-          if (cancelled) return
-          setPresetData(preset)
-          if (preset.values) setValues(prev => ({ ...prev, ...preset.values }))
-          if (preset.lightsState) {
-            setLightsState(prev => {
-              const next = { ...prev }
-              for (const f of Object.keys(preset.lightsState)) {
-                const src = preset.lightsState[f] || {}
-                next[f] = {
-                  ...prev[f],
-                  ...src,
-                  pontos: Array.isArray(src.pontos) ? src.pontos : (prev[f]?.pontos || [])
-                }
-              }
-              return next
-            })
-          }
-          if (Array.isArray(preset.hotspots)) setHotspots(preset.hotspots)
-          if (typeof preset.debugClick === 'boolean') setDebugClick(preset.debugClick)
-          if (typeof preset.showFinal === 'boolean') setShowFinal(preset.showFinal)
-          if (Array.isArray(preset.daylightTargets)) setDaylightTargets(preset.daylightTargets)
+          manifestFiles = await r.json()
+        } else {
+          console.warn('Manifest não encontrado ou erro ao carregar')
         }
       } catch (e) {
-        console.warn('Preset padrão não encontrado ou inválido:', e)
+        console.warn('Erro ao buscar manifest:', e)
       }
-    })()
-    return () => { cancelled = true }
-  }, [])
 
-  // Carrega manifest com lista de arquivos em /public/img/luzes
-  useEffect(() => {
-    fetch('/manifest.json')
-      .then(r => r.json())
-      .then(list => {
-        const sorted = sortLights(list)
-        setFiles(sorted)
-        // estado inicial: intensidade 50 (0–100) para todas as luzes
-        const v = {}
-        const ls = {}
-        const defaultDaylightTargets = []
-        for (const f of sorted) {
-          if (!/FINAL\.[a-zA-Z]+$/.test(f)) {
-            v[f] = 50
-            ls[f] = {
-              nome: sanitizeLabel(f),
-              estado: true,
-              dimmerizavel: false, // padrão desativado
-              valor: 50,
-              pontos: []
-            }
-            const s = sanitizeLabel(f)
-            if (s === 'DOME' || s === 'DOME 2' || s === 'REFORCO DO SOL') {
-              defaultDaylightTargets.push(f)
-            }
+      if (cancelled) return
+
+      // 2. Carregar Preset
+      let preset = null
+      try {
+        const presetPath = envConfig?.presetPath || `/presets/${currentEnv}/viewerState.json`
+        const r = await fetch(presetPath, { cache: 'no-store' })
+        if (r.ok) {
+          preset = await r.json()
+        }
+      } catch (e) {
+        console.warn('Preset não encontrado ou erro:', e)
+      }
+
+      if (cancelled) return
+
+      // 3. Definir lista de arquivos
+      let finalFileList = []
+      if (manifestFiles.length > 0) {
+        finalFileList = sortLights(manifestFiles)
+      } else if (preset) {
+        const filesFromPreset = new Set()
+        if (preset.values) Object.keys(preset.values).forEach(k => { if (k !== '__daylight') filesFromPreset.add(k) })
+        if (preset.lightsState) Object.keys(preset.lightsState).forEach(k => filesFromPreset.add(k))
+        finalFileList = sortLights(Array.from(filesFromPreset))
+      }
+
+      setFiles(finalFileList)
+
+      // 4. Inicializar Estados
+      const defaultValues = {}
+      const defaultLightsState = {}
+      const defaultDaylightTargets = []
+
+      finalFileList.forEach(f => {
+        const isFinal = /FINAL/.test(f)
+        defaultValues[f] = isFinal ? 0 : 50
+
+        if (!isFinal) {
+          defaultLightsState[f] = { nome: sanitizeLabel(f), estado: true, dimmerizavel: false, valor: 50, pontos: [] }
+          if (['DOME', 'DOME 2', 'REFORCO DO SOL'].includes(sanitizeLabel(f))) {
+            defaultDaylightTargets.push(f)
           }
         }
-        // Mescla com persistência local, se existir
-        try {
-          const saved = JSON.parse(localStorage.getItem('viewerState') || '{}')
-          const vMerged = { ...v, ...(saved?.values || {}) }
-          if (vMerged.__daylight == null) vMerged.__daylight = saved?.values?.__daylight ?? 50
-          const lsMerged = { ...ls }
-          if (saved?.lightsState) {
-            for (const f of Object.keys(lsMerged)) {
-              lsMerged[f] = { ...lsMerged[f], ...(saved.lightsState[f] || {}) }
-              if (!Array.isArray(lsMerged[f].pontos)) lsMerged[f].pontos = []
+      })
+
+      // Definir ordem inicial das camadas
+      let initialLayers = [...finalFileList]
+      if (preset && preset.layers && Array.isArray(preset.layers)) {
+        const savedOrder = preset.layers.filter(f => finalFileList.includes(f))
+        const newFiles = finalFileList.filter(f => !savedOrder.includes(f))
+        initialLayers = [...savedOrder, ...newFiles]
+      } else {
+        initialLayers.sort((a, b) => {
+          const aFinal = /FINAL/.test(a)
+          const bFinal = /FINAL/.test(b)
+          if (aFinal && !bFinal) return 1
+          if (!aFinal && bFinal) return -1
+          return 0
+        })
+      }
+      setLayers(initialLayers)
+
+      // Aplicar Preset
+      if (preset) {
+        setPresetData(preset)
+        setValues({ ...defaultValues, ...(preset.values || {}) })
+
+        const mergedLightsState = { ...defaultLightsState }
+        if (preset.lightsState) {
+          Object.keys(preset.lightsState).forEach(k => {
+            if (mergedLightsState[k]) {
+              mergedLightsState[k] = { ...mergedLightsState[k], ...preset.lightsState[k] }
+            } else {
+              mergedLightsState[k] = preset.lightsState[k]
             }
-          }
-          setValues(vMerged)
-          setLightsState(lsMerged)
-          if (Array.isArray(saved?.hotspots)) setHotspots(saved.hotspots)
-          if (typeof saved?.debugClick === 'boolean') setDebugClick(saved.debugClick)
-          if (typeof saved?.showFinal === 'boolean') setShowFinal(saved.showFinal)
-          setDaylightTargets(Array.isArray(saved?.daylightTargets) ? saved.daylightTargets : defaultDaylightTargets)
-        } catch {
-          setValues(v)
-          setLightsState(ls)
+          })
+        }
+        setLightsState(mergedLightsState)
+
+        if (Array.isArray(preset.daylightTargets)) {
+          setDaylightTargets(preset.daylightTargets)
+        } else {
           setDaylightTargets(defaultDaylightTargets)
         }
-      })
-      .catch(() => {
-        console.warn('manifest.json não encontrado. Rode: npm run sync-assets')
-      })
-  }, [])
 
-  // Observa mudanças de fullscreen para atualizar estado
-  useEffect(() => {
-    const onChange = () => setIsFullscreen(Boolean(document.fullscreenElement))
-    document.addEventListener('fullscreenchange', onChange)
-    return () => document.removeEventListener('fullscreenchange', onChange)
-  }, [])
-
-  const baseUrl = '/img/luzes/'
-  const baseFile = useMemo(() => files.find(f => /FINAL\.[a-zA-Z]+$/.test(f)), [files])
-  const lightFiles = useMemo(() => files.filter(f => !/FINAL\.[a-zA-Z]+$/.test(f)), [files])
-
-  const handleChange = (file, val) => {
-    if (file === '__daylight') {
-      // Aplicar controle simultâneo conforme configuração do desenvolvedor
-      const targets = daylightTargets.length ? daylightTargets : []
-      setValues(prev => {
-        const next = { ...prev, __daylight: val }
-        for (const t of targets) next[t] = val
-        return next
-      })
-    } else {
-      setValues(prev => ({ ...prev, [file]: val }))
-      // Ao ajustar sliders dimerizáveis, ligue a luz automaticamente
-      setLightsState(prev => {
-        const cur = prev[file] || {}
-        if (cur.dimmerizavel) {
-          return { ...prev, [file]: { ...cur, estado: true, valor: val } }
+        let loadedHotspots = []
+        if (Array.isArray(preset.hotspots)) {
+          loadedHotspots = preset.hotspots.map(h => ({ ...h, type: h.type || 'switch' }))
         }
-        return { ...prev, [file]: { ...cur, valor: val } }
-      })
-    }
-  }
-  const currentBlending = THREE.AdditiveBlending
+        if (Array.isArray(preset.portals)) {
+          const migratedPortals = preset.portals.map(p => ({
+            ...p,
+            type: 'portal',
+            icon: 'geo-alt-fill',
+            color: '#ffffff'
+          }))
+          loadedHotspots = [...loadedHotspots, ...migratedPortals]
+        }
+        setHotspots(loadedHotspots)
 
-  // Converte temperatura para um "tint" multiplicativo: positivo = mais quente; negativo = mais frio
+        // Carregar permissão de modo de visualização
+        let permission = 'final_only'
+        if (preset.viewModePermission) {
+          permission = preset.viewModePermission
+        } else if (typeof preset.allowLightAdjustment === 'boolean') {
+          // Migração de legado
+          permission = preset.allowLightAdjustment ? 'both' : 'final_only'
+        }
+        setViewModePermission(permission)
+
+        // Inicialização do viewMode baseada na permissão
+        if (!debugClick) {
+          if (permission === 'final_only') {
+            setViewMode('final')
+          } else if (permission === 'lights_only') {
+            setViewMode('lights')
+          } else if (permission === 'both' && preset.viewMode) {
+            setViewMode(preset.viewMode)
+          }
+        }
+
+      } else {
+        setPresetData(null)
+        setValues(defaultValues)
+        setLightsState(defaultLightsState)
+        setDaylightTargets(defaultDaylightTargets)
+        setHotspots([])
+        setViewModePermission('final_only')
+      }
+    }
+
+    loadData()
+
+    return () => { cancelled = true }
+  }, [currentEnv, envConfig])
+
+  const finalImages = useMemo(() => {
+    return files.filter(f => /FINAL/.test(f))
+  }, [files])
+
+  const baseUrl = envConfig?.imgPath ? `${envConfig.imgPath}/` : '/img/luzes/'
+  const lightFiles = useMemo(() => files.filter(f => !/FINAL/.test(f)), [files])
+
   const tintColor = useMemo(() => {
     const clamp = (n, min, max) => Math.min(Math.max(n, min), max)
-    const t = clamp(temperature, -40, 40)
+    const t = clamp(adjustments.temperature || 0, -40, 40)
     if (t === 0) return '#ffffff'
     if (t > 0) {
-      const k = t / 40 // 0..1
-      const r = 1.0
-      const g = 1.0 - 0.15 * k
-      const b = 1.0 - 0.30 * k
-      const c = new THREE.Color(r, g, b)
-      return c
+      const k = t / 40; return new THREE.Color(1.0, 1.0 - 0.15 * k, 1.0 - 0.30 * k)
     } else {
-      const k = (-t) / 40 // 0..1
-      const r = 1.0 - 0.20 * k
-      const g = 1.0 - 0.10 * k
-      const b = 1.0
-      const c = new THREE.Color(r, g, b)
-      return c
+      const k = (-t) / 40; return new THREE.Color(1.0 - 0.20 * k, 1.0 - 0.10 * k, 1.0)
     }
-  }, [temperature])
+  }, [adjustments.temperature])
 
   const toggleFullscreen = async () => {
     const el = containerRef.current
-    try {
-      if (document.fullscreenElement) {
-        if (document.exitFullscreen) {
-          await document.exitFullscreen()
-        } else if (document.webkitExitFullscreen) {
-          // Safari fallback
-          document.webkitExitFullscreen()
-        }
-      } else if (el) {
-        if (el.requestFullscreen) {
-          await el.requestFullscreen()
-        } else if (el.webkitRequestFullscreen) {
-          // Safari fallback
-          el.webkitRequestFullscreen()
-        }
-      }
-    } catch (e) {
-      console.warn('Falha ao alternar fullscreen:', e)
-    }
+    if (!el) return
+    if (!document.fullscreenElement) el.requestFullscreen().catch(console.warn)
+    else document.exitFullscreen().catch(console.warn)
+    setIsFullscreen(!document.fullscreenElement)
   }
 
-  // Zoom por FOV para panorama dentro da esfera
-  // Você pode ajustar manualmente o zoom aqui:
-  // - minFov: quanto MENOR, mais zoom-in (ex.: 1.5, 2, 3)
-  // - maxFov: quanto MAIOR, mais zoom-out (ex.: 120, 140, 160)
-  // - sensitivity: passo por rolagem (ex.: 0.08, 0.12, 0.16)
+  useEffect(() => {
+    const handler = () => setIsFullscreen(!!document.fullscreenElement)
+    document.addEventListener('fullscreenchange', handler)
+    return () => document.removeEventListener('fullscreenchange', handler)
+  }, [])
+
   function FovZoom({ minFov = 1.5, maxFov = 140, sensitivity = 0.12 }) {
     const { camera, gl } = useThree()
     useEffect(() => {
       const onWheel = (e) => {
-        // Evita scroll da página ao usar zoom no canvas
         e.preventDefault()
-        const direction = Math.sign(e.deltaY) // 1: afastar, -1: aproximar
-        // Segure Shift para acelerar ainda mais o zoom
+        const direction = Math.sign(e.deltaY)
         const accel = e.shiftKey ? 2.5 : 1
         const step = camera.fov * sensitivity * accel
         camera.fov = THREE.MathUtils.clamp(camera.fov + direction * step, minFov, maxFov)
@@ -313,481 +378,562 @@ const [values, setValues] = useState({}) // intensidade 0..10 por arquivo
     return null
   }
 
-  // Adiciona hotspot na superfície da esfera ao clicar em modo debug
-  const addHotspot = (point) => {
-    const id = (self.crypto && self.crypto.randomUUID) ? self.crypto.randomUUID() : `${Date.now()}-${Math.floor(Math.random()*1e6)}`
-    setHotspots(prev => [...prev, { id, position: [point.x, point.y, point.z], lights: [], shape: 'sphere', size: 0.2 }])
+  const addPoint = (point) => {
+    if (isDrawing && editingHotspotId) {
+      // Adicionar ponto ao polígono existente
+      setHotspots(prev => prev.map(h => {
+        if (h.id === editingHotspotId) {
+          const currentPoints = h.points || []
+          return { ...h, points: [...currentPoints, [point.x, point.y, point.z]] }
+        }
+        return h
+      }))
+      return
+    }
+
+    const id = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}`
+    setHotspots(prev => [...prev, {
+      id,
+      type: 'switch',
+      position: [point.x, point.y, point.z],
+      lights: [],
+      shape: 'sphere',
+      size: 0.2,
+      width: 1, height: 1, depth: 0.1,
+      color: '#3b82f6',
+      points: [] // Para polígonos
+    }])
     setEditingHotspotId(id)
-    const initialSel = {}
-    for (const f of files.filter(f => !/FINAL\.[a-zA-Z]+$/.test(f))) initialSel[f] = false
-    setMenuSelection(initialSel)
   }
 
-  const assignLightsToHotspot = () => {
-    if (!editingHotspotId) return
-    const selected = Object.keys(menuSelection).filter(f => menuSelection[f])
-    // Atualiza luzes do hotspot
-    setHotspots(prev => prev.map(h => h.id === editingHotspotId ? { ...h, lights: selected } : h))
-    // Reconciliar pontos nas luzes: adiciona aos selecionados (sem duplicar) e remove dos não selecionados
-    setLightsState(prev => {
-      const next = { ...prev }
-      for (const f of Object.keys(next)) {
-        const pts = Array.isArray(next[f]?.pontos) ? next[f].pontos : []
-        const has = pts.includes(editingHotspotId)
-        if (selected.includes(f)) {
-          // garantir único
-          next[f] = { ...next[f], pontos: has ? pts : [...pts, editingHotspotId] }
-        } else {
-          // remover se existir
-          next[f] = { ...next[f], pontos: pts.filter(id => id !== editingHotspotId) }
-        }
-      }
-      return next
-    })
-    setEditingHotspotId(null)
-  }
-
-  const onHotspotClick = (hotspot) => {
+  const handleHotspotClick = (h) => {
     if (debugClick) {
-      setEditingHotspotId(hotspot.id)
-      const initialSel = {}
-      for (const f of files.filter(f => !/FINAL\.[a-zA-Z]+$/.test(f))) initialSel[f] = hotspot.lights?.includes(f) || false
-      setMenuSelection(initialSel)
+      setEditingHotspotId(h.id)
     } else {
-      setLightsState(prev => {
-        const next = { ...prev }
-        for (const f of hotspot.lights || []) {
-          const cur = next[f] || { estado: true, dimmerizavel: true, valor: values[f] ?? 50, nome: sanitizeLabel(f), pontos: [] }
-          const novoEstado = !cur.estado
-          next[f] = { ...cur, estado: novoEstado }
-          // Para luzes não dimerizáveis, o slider define valor absoluto;
-          // ao ligar/desligar não alteramos o valor (apenas estado).
+      if (h.type === 'switch') {
+        // Modo FINAL: Bloqueia interruptores de luz
+        if (viewMode === 'final') return
+
+        setLightsState(prev => {
+          const next = { ...prev }
+          for (const f of h.lights || []) {
+            const cur = next[f] || { estado: true, dimmerizavel: true, valor: values[f] ?? 50, nome: sanitizeLabel(f), pontos: [] }
+            next[f] = { ...cur, estado: !cur.estado }
+          }
+          return next
+        })
+      } else if (h.type === 'portal') {
+        // Portais funcionam em ambos os modos
+        if (h.targetEnvironment) setCurrentEnv(h.targetEnvironment)
+      } else if (h.type === 'swap') {
+        // Modo LUZES: Bloqueia troca de camadas FINAL
+        if (viewMode === 'lights') return
+
+        // Suporte a múltiplas imagens (Cycle)
+        const targets = h.targetImages && h.targetImages.length > 0 ? h.targetImages : (h.targetImage ? [h.targetImage] : [])
+
+        if (targets.length > 0) {
+          // Encontrar qual imagem está ativa atualmente
+          const activeIndex = targets.findIndex(img => (values[img] || 0) > 0)
+
+          // Calcular próxima imagem
+          let nextIndex = 0
+          if (activeIndex !== -1) {
+            nextIndex = (activeIndex + 1) % targets.length
+          }
+
+          const nextImage = targets[nextIndex]
+
+          // Desativar todas as outras do grupo e ativar a próxima
+          setValues(prev => {
+            const next = { ...prev }
+            targets.forEach(t => next[t] = 0) // Apaga todas do grupo
+            next[nextImage] = 100 // Acende a próxima
+            return next
+          })
         }
-        return next
-      })
-    }
-  }
-
-  const toggleDimmerizavel = (file) => {
-    setLightsState(prev => ({
-      ...prev,
-      [file]: { ...prev[file], dimmerizavel: !(prev[file]?.dimmerizavel !== false) }
-    }))
-  }
-
-  const unlinkHotspotFromLight = (file, hotspotId) => {
-    // Remove o link da luz
-    setLightsState(prev => ({
-      ...prev,
-      [file]: { ...prev[file], pontos: (prev[file]?.pontos || []).filter(id => id !== hotspotId) }
-    }))
-    // Remove a luz do hotspot
-    setHotspots(prev => prev.map(h => h.id === hotspotId ? { ...h, lights: (h.lights || []).filter(f => f !== file) } : h))
-  }
-
-  // Persistência: salva alterações relevantes no localStorage
-  useEffect(() => {
-    try {
-      const payload = {
-        values,
-        lightsState,
-        hotspots,
-        debugClick,
-        showFinal,
-        daylightTargets,
-        adjustments
       }
-      localStorage.setItem('viewerState', JSON.stringify(payload))
-    } catch (e) {
-      console.warn('Falha ao salvar viewerState no localStorage:', e)
     }
-  }, [values, lightsState, hotspots, debugClick, showFinal, daylightTargets, adjustments])
+  }
 
-  // Aplica filtros CSS globais (saturação, contraste, gama aprox., destaque e redução de ruído)
+  const handlePointUpdate = (hotspotId, pointIndex, newPos) => {
+    setHotspots(prev => prev.map(h => {
+      if (h.id === hotspotId) {
+        const newPoints = [...(h.points || [])]
+        newPoints[pointIndex] = newPos
+        return { ...h, points: newPoints }
+      }
+      return h
+    }))
+  }
+
+  const handleMove = (pos) => {
+    if (editingHotspotId && !isDrawing) {
+      setHotspots(prev => prev.map(h => h.id === editingHotspotId ? { ...h, position: pos } : h))
+    }
+  }
+
+  const handleUpdateHotspot = (id, data) => {
+    setHotspots(prev => prev.map(h => h.id === id ? { ...h, ...data } : h))
+  }
+
+  const handleDeleteHotspot = (id) => {
+    setHotspots(prev => prev.filter(h => h.id !== id))
+    setEditingHotspotId(null)
+    setIsDrawing(false)
+  }
+
+  const handleDuplicateHotspot = (id) => {
+    const original = hotspots.find(h => h.id === id)
+    if (!original) return
+    const newId = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}`
+    const offset = 0.5
+    const newPoint = {
+      ...original,
+      id: newId,
+      position: [original.position[0] + offset, original.position[1], original.position[2] + offset]
+    }
+    setHotspots(prev => [...prev, newPoint])
+    setEditingHotspotId(newId)
+  }
+
+  const handleTurnOffExceptDaylight = () => {
+    const nextValues = { ...values }
+    const nextState = { ...lightsState }
+    for (const file of files) {
+      if (!daylightTargets.includes(file) && !/FINAL/.test(file)) {
+        nextValues[file] = 0
+        if (nextState[file]) nextState[file] = { ...nextState[file], estado: false }
+      }
+    }
+    setValues(nextValues)
+    setLightsState(nextState)
+  }
+
+  const handlePresetAll = () => {
+    if (presetData && presetData.values) {
+      setValues(prev => ({ ...prev, ...presetData.values }))
+      if (presetData.lightsState) {
+        setLightsState(prev => {
+          const next = { ...prev }
+          for (const k in presetData.lightsState) {
+            next[k] = { ...next[k], ...presetData.lightsState[k] }
+          }
+          return next
+        })
+      }
+    } else {
+      const next = { ...values }
+      const nextState = { ...lightsState }
+      for (const f of files) {
+        if (!/FINAL/.test(f)) {
+          next[f] = 100
+          if (nextState[f]) nextState[f] = { ...nextState[f], estado: true }
+        } else {
+          next[f] = 0
+        }
+      }
+      setValues(next)
+      setLightsState(nextState)
+    }
+  }
+
   useEffect(() => {
     const el = canvasElRef.current
     if (!el) return
-    const { saturation = 1, contrast = 1, gamma = 1, brightness = 1, highlights = 0, denoise = 0 } = adjustments || {}
-    const brightnessFromGamma = Math.pow(gamma, -0.5)
-    const contrastAdj = contrast * (1 + (highlights || 0) * 0.25)
-    const brightnessAdj = brightnessFromGamma * brightness * (1 + (highlights || 0) * 0.12)
-    const blurPx = Math.max(0, denoise || 0)
-    const filter = `saturate(${saturation}) contrast(${contrastAdj}) brightness(${brightnessAdj}) ${blurPx > 0 ? `blur(${blurPx}px)` : ''}`.trim()
-    el.style.filter = filter
+    const { saturation, contrast, brightness, highlights, denoise } = adjustments
+    // Gamma removido do CSS filter
+    const cAdj = contrast * (1 + highlights * 0.25)
+    const bAdj = brightness * (1 + highlights * 0.12)
+    const blur = Math.max(0, denoise)
+    el.style.filter = `saturate(${saturation}) contrast(${cAdj}) brightness(${bAdj}) ${blur > 0 ? `blur(${blur}px)` : ''}`
   }, [adjustments])
+
+  useEffect(() => {
+    if (adjustmentsOpen && adjustmentsModalRef.current) {
+      const el = adjustmentsModalRef.current
+      const rect = el.getBoundingClientRect()
+      setAdjustmentsPos({
+        x: Math.max(20, Math.min(window.innerWidth - 20 - rect.width, window.innerWidth / 2 - rect.width / 2)),
+        y: Math.max(20, Math.min(window.innerHeight - 20 - rect.height, window.innerHeight / 2 - rect.height / 2))
+      })
+    }
+  }, [adjustmentsOpen])
+
+  // Lógica de arrastar o menu de ajustes
+  useEffect(() => {
+    const handlePointerMove = (e) => {
+      if (draggingAdjustRef.current) {
+        setAdjustmentsPos({
+          x: e.clientX - dragOffsetRef.current.x,
+          y: e.clientY - dragOffsetRef.current.y
+        })
+      }
+    }
+    const handlePointerUp = () => { draggingAdjustRef.current = false }
+
+    if (adjustmentsOpen) {
+      window.addEventListener('pointermove', handlePointerMove)
+      window.addEventListener('pointerup', handlePointerUp)
+    }
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove)
+      window.removeEventListener('pointerup', handlePointerUp)
+    }
+  }, [adjustmentsOpen])
+
+  // BUG FIX: Wrapped in useCallback to prevent re-triggering
+  const handleCameraCaptured = useCallback((camData) => {
+    const payload = {
+      values,
+      lightsState,
+      hotspots,
+      debugClick,
+      daylightTargets,
+      adjustments,
+      camera: camData,
+      layers,
+      viewModePermission, // Salvar a permissão (3 vias)
+      viewMode // Salvar o modo de visualização atual
+    }
+
+    if (saveActionType.current === 'save') {
+      fetch('/save-config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+        .then(async (r) => {
+          if (r.ok) alert('Preset salvo com sucesso!')
+          else alert('Erro ao salvar no servidor.')
+        })
+        .catch(e => alert('Erro ao salvar: ' + e))
+    } else if (saveActionType.current === 'download') {
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'viewerState.json'
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    }
+    // IMPORTANTE: Resetar o trigger para evitar loops
+    setSaveTrigger(0)
+  }, [values, lightsState, hotspots, debugClick, daylightTargets, adjustments, layers, viewModePermission, viewMode])
+
+  const triggerSave = () => {
+    saveActionType.current = 'save'
+    setSaveTrigger(t => t + 1)
+  }
+
+  const triggerDownload = () => {
+    saveActionType.current = 'download'
+    setSaveTrigger(t => t + 1)
+  }
+
+  const toggleViewMode = () => {
+    // Se a permissão for 'final_only' ou 'lights_only', não permite alternar (exceto em debug)
+    if (!debugClick) {
+      if (viewModePermission === 'final_only') return
+      if (viewModePermission === 'lights_only') return
+    }
+    setViewMode(prev => prev === 'lights' ? 'final' : 'lights')
+  }
+
+  // Traduções para o menu de ajustes
+  const adjustmentLabels = {
+    saturation: 'Saturação',
+    contrast: 'Contraste',
+    brightness: 'Brilho',
+    highlights: 'Realces',
+    denoise: 'Redução de Ruído',
+    temperature: 'Temperatura de Cor',
+    bloomIntensity: 'Bloom Intensidade',
+    bloomRadius: 'Bloom Tamanho'
+  }
 
   return (
     <div ref={containerRef} className="h-screen w-screen overflow-hidden relative">
+      <div className="absolute top-4 left-4 z-50">
+        <EnvironmentSelector currentEnvironment={currentEnv} onEnvironmentChange={setCurrentEnv} />
+      </div>
+
+      {debugClick && (
+        <div className="absolute top-4 right-20 z-50 flex gap-2">
+          <button
+            onClick={() => setShowLayerManager(!showLayerManager)}
+            className="bg-black/50 hover:bg-black/70 text-white p-2 rounded-lg backdrop-blur border border-white/10"
+            title="Gerenciar Camadas"
+          >
+            <i className="bi bi-layers"></i>
+          </button>
+        </div>
+      )}
+
       <Canvas
-        camera={{ position: [0, 0, 1], fov: 75, near: 0.000001, far: 2000000 }}
+        camera={{ position: [0, 0, 1], fov: 75 }}
         onCreated={(state) => {
-          // Acúmulo em espaço linear para reduzir ruído em adição de camadas
-/* Renderização em espaço linear para acumulação aditiva mais suave */
-state.gl.outputColorSpace = THREE.LinearSRGBColorSpace
-state.gl.toneMapping = THREE.NoToneMapping
+          state.gl.outputColorSpace = THREE.LinearSRGBColorSpace
+          state.gl.toneMapping = THREE.NoToneMapping
           canvasElRef.current = state.gl.domElement
         }}
       >
-        {/* Base: luzes */}
-        {lightFiles.map(f => {
-          const estadoOn = lightsState?.[f]?.estado !== false
-          const opacity = estadoOn ? (values[f] ?? 50) / 100 : 0
+        <EffectComposer disableNormalPass>
+          <Bloom
+            luminanceThreshold={0.6}
+            luminanceSmoothing={0.9}
+            intensity={adjustments.bloomIntensity || 0}
+          />
+        </EffectComposer>
+
+        {/* Renderização Condicional Baseada em viewMode */}
+        {layers.map((f, index) => {
+          const isFinal = /FINAL/.test(f)
+          const isMainFinal = /FINAL\.[a-zA-Z]+$/.test(f) || f === 'FINAL.png'
+
+          let opacity = 0
+
+          if (viewMode === 'final') {
+            // Modo FINAL:
+            if (!isFinal) {
+              opacity = 0
+            } else if (isMainFinal) {
+              opacity = 1 // Base sempre visível no modo final
+            } else {
+              opacity = (values[f] ?? 0) / 100
+            }
+          } else {
+            // Modo LUZES:
+            if (isFinal) {
+              opacity = 0
+            } else {
+              opacity = (values[f] ?? 0) / 100
+              if (lightsState[f]?.estado === false) opacity = 0
+            }
+          }
+
+          const blending = isFinal ? THREE.NormalBlending : THREE.AdditiveBlending
+
           return (
-            <SphereLayer key={f} url={`${baseUrl}${f}`} blending={currentBlending} opacity={opacity} renderOrder={0} tint={tintColor} />
+            <SphereLayer
+              key={f}
+              url={`${baseUrl}${f}`}
+              blending={blending}
+              opacity={opacity}
+              tint={tintColor}
+              renderOrder={index}
+            />
           )
         })}
 
-        {/* Esfera de picking invisível para capturar coordenadas quando em modo debug */}
         <mesh
+          onClick={(e) => {
+            if (debugClick && isDrawing && editingHotspotId) {
+              addPoint(e.point)
+            }
+          }}
           onDoubleClick={(e) => {
             if (!debugClick) return
+            if (isDrawing) return
             if (editingHotspotId) return
-            addHotspot(e.point)
+            addPoint(e.point)
           }}
-          renderOrder={-100}
-          scale={[-1, 1, 1]}
+          renderOrder={-100} scale={[-1, 1, 1]}
         >
           <sphereGeometry args={[10, 64, 64]} />
           <meshBasicMaterial side={THREE.BackSide} transparent opacity={0} depthWrite={false} />
         </mesh>
 
-        {/* Overlay FINAL: não faz parte da pilha de efeitos, sobrepõe quando ativo */}
-        {showFinal && baseFile && (
-          <SphereLayer url={`${baseUrl}${baseFile}`} blending={THREE.NormalBlending} opacity={1} renderOrder={1000} />
-        )}
-
-        {/* Controles de câmera para navegação 360° (damping levemente elástico) */}
-        <OrbitControls
-          makeDefault
-          enablePan={false}
-          enableZoom={false}
-          zoomSpeed={2.2}
-          rotateSpeed={draggingHotspot ? 0.45 : 0.6}
-          minDistance={0.00001}
-          maxDistance={20000}
-          enableDamping
-          dampingFactor={draggingHotspot ? 0.12 : 0.10}
-          target={[0, 0, 0]}
+        <CameraController
+          saveTrigger={saveTrigger}
+          onSaveCamera={handleCameraCaptured}
+          loadData={presetData}
         />
-        {/* Ajuste estes valores para personalizar a força do zoom FOV */}
-        <FovZoom minFov={1.5} maxFov={140} sensitivity={0.12} />
+        <FovZoom />
 
-        {/* Hotspots */}
-        {hotspots.map(h => (
-          <Hotspot
-            key={h.id}
-            position={h.position}
-            debugActive={debugClick}
-            onClick={() => onHotspotClick(h)}
-            onMove={(pos) => setHotspots(prev => prev.map(x => x.id === h.id ? { ...x, position: pos } : x))}
-            onDragStart={() => setDraggingHotspot(true)}
-            onDragEnd={() => setDraggingHotspot(false)}
-            shape={h.shape}
-            size={h.size}
-            sizeX={h.sizeX}
-            sizeY={h.sizeY}
-            radius={10}
-          />
-        ))}
+        <DrawingCursor isDrawing={isDrawing} />
+
+        {hotspots.map(h => {
+          // Filtragem de Hotspots baseada no viewMode
+          if (viewMode === 'final' && h.type === 'switch' && !debugClick) return null
+          if (viewMode === 'lights' && h.type === 'swap' && !debugClick) return null
+
+          // Filtros de exibição no modo debug
+          if (debugClick && !visibleHotspotTypes[h.type]) return null
+
+          if (h.type === 'portal') {
+            return (
+              <Portal
+                key={h.id}
+                id={h.id}
+                position={h.position}
+                targetEnvironment={h.targetEnvironment}
+                label={h.label || 'Portal'}
+                icon={h.icon || 'geo-alt-fill'}
+                color={h.color || '#ffffff'}
+                opacity={h.opacity ?? 1}
+                scale={h.scale || 1}
+                debugMode={debugClick}
+                onPortalClick={() => handleHotspotClick(h)}
+                onDragStart={() => { setDraggingHotspot(true); setEditingHotspotId(h.id) }}
+                onDragEnd={() => setDraggingHotspot(false)}
+                onMove={handleMove}
+              />
+            )
+          }
+          else {
+            return (
+              <Hotspot
+                key={h.id}
+                id={h.id}
+                position={h.position}
+                debugActive={debugClick}
+                onClick={() => handleHotspotClick(h)}
+                selected={editingHotspotId === h.id}
+                shape={h.shape}
+                size={h.size}
+                width={h.width}
+                height={h.height}
+                depth={h.depth}
+                rotation={h.rotation}
+                color={h.type === 'swap' ? '#10b981' : (h.color || '#3b82f6')}
+                onDragStart={() => { setDraggingHotspot(true); setEditingHotspotId(h.id) }}
+                onDragEnd={() => setDraggingHotspot(false)}
+                onMove={handleMove}
+                onPointUpdate={handlePointUpdate}
+                points={h.points}
+              />
+            )
+          }
+        })}
       </Canvas>
 
-      {/* HUD de controles */}
-      <LightControls
-        files={files}
-        values={values}
-        onChange={handleChange}
-        showFinal={showFinal}
-        onToggleFinal={() => setShowFinal(v => !v)}
-        collapsed={collapsed}
-        onToggleCollapsed={() => setCollapsed(v => !v)}
-        debugClick={debugClick}
-        onToggleDebugClick={() => setDebugClick(v => !v)}
-        lightsState={lightsState}
-        hotspots={hotspots}
-        onToggleDimmerizavel={toggleDimmerizavel}
-        onUnlinkHotspot={unlinkHotspotFromLight}
-        daylightTargets={daylightTargets}
-        onUpdateDaylightTargets={(targets) => setDaylightTargets(targets)}
-      />
-
-      {/* Janela flutuante de Ajustes Avançados via Portal no body */}
-      {adjustmentsOpen && createPortal(
-        (
-          <div
-            ref={adjustmentsModalRef}
-            className="fixed w-80 glass rounded-2xl p-4 z-[9999] pointer-events-auto shadow-2xl shadow-black/40 dark-glow text-shadow select-none no-caret no-select"
-            style={{ top: `${adjustmentsPos.y}px`, left: `${adjustmentsPos.x}px` }}
-          >
-            {/* Área de arraste nas bordas (não interfere em sliders/botões) */}
-            <div className="pointer-events-none absolute inset-0">
-              {/* Topo */}
-              <div
-                className="absolute top-0 left-0 right-0 h-3 pointer-events-auto cursor-move"
-                onPointerDown={(e) => {
-                  e.preventDefault(); e.stopPropagation();
-                  draggingAdjustRef.current = true
-                  const rect = e.currentTarget.parentElement.getBoundingClientRect()
-                  dragOffsetRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top }
-                  if (typeof document !== 'undefined') document.body.style.userSelect = 'none'
-                }}
-              />
-              {/* Base */}
-              <div
-                className="absolute bottom-0 left-0 right-0 h-3 pointer-events-auto cursor-move"
-                onPointerDown={(e) => {
-                  e.preventDefault(); e.stopPropagation();
-                  draggingAdjustRef.current = true
-                  const rect = e.currentTarget.parentElement.getBoundingClientRect()
-                  dragOffsetRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top }
-                  if (typeof document !== 'undefined') document.body.style.userSelect = 'none'
-                }}
-              />
-              {/* Esquerda */}
-              <div
-                className="absolute top-0 bottom-0 left-0 w-3 pointer-events-auto cursor-move"
-                onPointerDown={(e) => {
-                  e.preventDefault(); e.stopPropagation();
-                  draggingAdjustRef.current = true
-                  const rect = e.currentTarget.parentElement.getBoundingClientRect()
-                  dragOffsetRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top }
-                  if (typeof document !== 'undefined') document.body.style.userSelect = 'none'
-                }}
-              />
-              {/* Direita */}
-              <div
-                className="absolute top-0 bottom-0 right-0 w-3 pointer-events-auto cursor-move"
-                onPointerDown={(e) => {
-                  e.preventDefault(); e.stopPropagation();
-                  draggingAdjustRef.current = true
-                  const rect = e.currentTarget.parentElement.getBoundingClientRect()
-                  dragOffsetRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top }
-                  if (typeof document !== 'undefined') document.body.style.userSelect = 'none'
-                }}
-              />
-            </div>
-            <div
-              className="flex items-center justify-between mb-2 cursor-move"
-              onPointerDown={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                draggingAdjustRef.current = true
-                const rect = e.currentTarget.parentElement.getBoundingClientRect()
-                dragOffsetRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top }
-                if (typeof document !== 'undefined') document.body.style.userSelect = 'none'
-              }}
-              onPointerUp={() => {
-                if (typeof document !== 'undefined') document.body.style.userSelect = ''
-              }}
-            >
-              <div className="text-white/90 text-sm font-medium text-shadow">Ajustes avançados</div>
-              <button className="w-8 h-8 rounded-md bg-white/10 hover:bg-white/20 flex items-center justify-center" onClick={() => setAdjustmentsOpen(false)} aria-label="Fechar ajustes"><i className="bi bi-x text-white" /></button>
-            </div>
-            <div className="space-y-3">
-              <div>
-                <div className="text-[11px] text-neutral-200 mb-1 text-shadow">Temperatura de cor</div>
-                <SliderBar value={temperature} min={-40} max={40} step={1} onChange={v => setTemperature(v)} height={8} ariaLabel="Temperatura de cor" />
-              </div>
-              <div>
-                <div className="text-[11px] text-neutral-200 mb-1 text-shadow">Saturação</div>
-                <SliderBar value={adjustments.saturation} min={0} max={2} step={0.01} onChange={v => setAdjustments(a => ({ ...a, saturation: v }))} height={8} ariaLabel="Saturação" />
-              </div>
-              <div>
-                <div className="text-[11px] text-neutral-200 mb-1 text-shadow">Contraste</div>
-                <SliderBar value={adjustments.contrast} min={0.5} max={2} step={0.01} onChange={v => setAdjustments(a => ({ ...a, contrast: v }))} height={8} ariaLabel="Contraste" />
-              </div>
-              <div>
-                <div className="text-[11px] text-neutral-200 mb-1 text-shadow">Gama</div>
-                <SliderBar value={adjustments.gamma} min={0.5} max={2} step={0.01} onChange={v => setAdjustments(a => ({ ...a, gamma: v }))} height={8} ariaLabel="Gama" />
-              </div>
-              <div>
-                <div className="text-[11px] text-neutral-200 mb-1 text-shadow">Brilho</div>
-                <SliderBar value={adjustments.brightness} min={0.5} max={1.5} step={0.01} onChange={v => setAdjustments(a => ({ ...a, brightness: v }))} height={8} ariaLabel="Brilho" />
-              </div>
-              <div>
-                <div className="text-[11px] text-neutral-200 mb-1 text-shadow">Highlight burn</div>
-                <SliderBar value={adjustments.highlights} min={0} max={1} step={0.01} onChange={v => setAdjustments(a => ({ ...a, highlights: v }))} height={8} ariaLabel="Highlight burn" />
-              </div>
-              <div>
-                <div className="text-[11px] text-neutral-200 mb-1 text-shadow">Redução de ruído</div>
-                <SliderBar value={adjustments.denoise} min={0} max={4} step={0.1} onChange={v => setAdjustments(a => ({ ...a, denoise: v }))} height={8} ariaLabel="Redução de ruído" />
-              </div>
-              <div className="pt-2 flex justify-end">
-                <button className="px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-xs text-shadow" onClick={() => { setAdjustments({ saturation: 1, contrast: 1, gamma: 1, brightness: 1, highlights: 0, denoise: 0 }); setTemperature(0) }}>restaurar padrão</button>
-              </div>
-            </div>
-          </div>
-        ),
-        document.body
-      )}
-
-      {/* Painel do Usuário: Luz do Dia + sliders compactos */}
       <UserPanel
         open={userPanelOpen}
-        onToggle={() => setUserPanelOpen(v => !v)}
+        onToggle={() => setUserPanelOpen(!userPanelOpen)}
         values={values}
-        onChange={handleChange}
-        lightsState={lightsState}
-        onPresetAll={() => {
-          if (presetData) {
-            if (presetData.values) setValues(prev => ({ ...prev, ...presetData.values }))
-            setLightsState(prev => {
-              const next = { ...prev }
-              for (const f of Object.keys(next)) {
-                next[f] = { ...next[f], estado: true }
-              }
-              if (presetData.lightsState) {
-                for (const f of Object.keys(presetData.lightsState)) {
-                  next[f] = { ...next[f], ...presetData.lightsState[f], estado: true }
-                }
-              }
-              return next
-            })
+        onChange={(f, v) => {
+          if (f === '__daylight') {
+            const next = { ...values, __daylight: v }
+            daylightTargets.forEach(t => next[t] = v)
+            setValues(next)
           } else {
-            setLightsState(prev => {
-              const next = { ...prev }
-              for (const f of Object.keys(next)) next[f] = { ...next[f], estado: true }
-              return next
-            })
+            setValues(p => ({ ...p, [f]: v }))
+            if (lightsState[f]?.dimmerizavel) setLightsState(p => ({ ...p, [f]: { ...p[f], estado: true, valor: v } }))
           }
         }}
-        onTurnOffExceptDaylight={() => {
-          const targets = daylightTargets
-          setLightsState(prev => {
-            const next = { ...prev }
-            for (const f of Object.keys(next)) {
-              const keep = targets.includes(f)
-              next[f] = { ...next[f], estado: keep }
-            }
-            return next
-          })
-        }}
+        lightsState={lightsState}
+        onPresetAll={handlePresetAll}
+        onTurnOffExceptDaylight={handleTurnOffExceptDaylight}
         onOpenAdjustments={() => setAdjustmentsOpen(true)}
+        isFullscreen={isFullscreen}
+        onToggleFullscreen={toggleFullscreen}
+        viewMode={viewMode}
+        viewModePermission={viewModePermission} // Nova prop
+        onToggleViewMode={toggleViewMode} // Nova prop para o usuário alternar
       />
 
-      {/* Botão de tela cheia (canto inferior direito) */}
-      {/* Botão de tela cheia com hover-only */}
-      <div className="group fixed bottom-4 right-4 z-50">
-        <button
-          onClick={toggleFullscreen}
-          className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 transition flex items-center justify-center opacity-0 group-hover:opacity-100 shadow-lg shadow-black/40"
-          aria-label={isFullscreen ? 'Sair da tela cheia' : 'Entrar em tela cheia'}
-          title={isFullscreen ? 'Sair da tela cheia' : 'Tela cheia'}
-        >
-          {isFullscreen ? (
-            <i className="bi bi-box-arrow-in-down-left text-white text-lg opacity-90 drop-shadow-lg" />
-          ) : (
-            <i className="bi bi-aspect-ratio text-white text-lg opacity-80 drop-shadow-lg" />
-          )}
-        </button>
-      </div>
+      <LightControls
+        files={lightFiles}
+        values={values}
+        lightsState={lightsState}
+        onChange={(f, v) => setValues(p => ({ ...p, [f]: v }))}
+        onToggleDimmerizavel={(f) => setLightsState(p => ({ ...p, [f]: { ...p[f], dimmerizavel: !p[f].dimmerizavel } }))}
+        onUnlinkHotspot={(f, id) => {
+          setLightsState(p => ({ ...p, [f]: { ...p[f], pontos: p[f].pontos.filter(x => x !== id) } }))
+          setHotspots(p => p.map(h => h.id === id ? { ...h, lights: h.lights.filter(x => x !== f) } : h))
+        }}
+        debugMode={debugClick}
+        onToggleDebugClick={() => setDebugClick(!debugClick)}
+        collapsed={collapsed}
+        onToggleCollapsed={() => setCollapsed(!collapsed)}
+        showFinal={viewMode === 'final'}
+        onToggleFinal={toggleViewMode}
+        daylightTargets={daylightTargets}
+        onUpdateDaylightTargets={setDaylightTargets}
+        onSave={triggerSave}
+        onDownload={triggerDownload}
+        viewModePermission={viewModePermission}
+        onChangeViewModePermission={(perm) => {
+          setViewModePermission(perm)
+          // Atualizar viewMode imediatamente ao mudar permissão
+          if (perm === 'final_only') setViewMode('final')
+          if (perm === 'lights_only') setViewMode('lights')
+        }}
+        visibleHotspotTypes={visibleHotspotTypes}
+        onToggleHotspotVisibility={(type) => setVisibleHotspotTypes(prev => ({ ...prev, [type]: !prev[type] }))}
+      />
 
-      {/* Área de hover para mostrar botão de sair (X) no topo quando em fullscreen */}
-      {isFullscreen && (
-        <div className="group fixed top-0 left-0 w-full h-12 z-50">
-          <button
-            onClick={toggleFullscreen}
-            className="absolute right-4 top-2 w-8 h-8 rounded-md bg-white/10 hover:bg-white/20 transition opacity-0 group-hover:opacity-100 flex items-center justify-center shadow-lg shadow-black/40"
-            aria-label="Sair da tela cheia"
-            title="Sair da tela cheia"
-          >
-            <i className="bi bi-box-arrow-in-down-left text-white opacity-90 drop-shadow-lg" />
-          </button>
-        </div>
+      {showLayerManager && debugClick && (
+        <LayerManager
+          layers={layers}
+          setLayers={setLayers}
+          values={values}
+          setValues={setValues}
+          onClose={() => setShowLayerManager(false)}
+        />
       )}
 
-      {/* Menu flutuante para selecionar luzes do hotspot (centralizado + overlay cinza) */}
-      {editingHotspotId && (
-        <>
-          <div className="fixed inset-0 bg-gray-800/50 z-40" />
-          <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <div className="glass rounded-xl p-4 w-80 shadow-2xl shadow-black/60 text-shadow">
-              <div className="mb-2 text-sm font-semibold">Associar luzes ao ponto</div>
-              {/* opções do ponto: forma e tamanho */}
-              <div className="mb-3 grid grid-cols-2 gap-2 text-xs">
-                <label className="flex flex-col">
-                  <span>Forma</span>
-                  <select
-                    value={hotspots.find(h => h.id === editingHotspotId)?.shape || 'sphere'}
-                    onChange={e => setHotspots(prev => prev.map(h => h.id === editingHotspotId ? { ...h, shape: e.target.value } : h))}
-                    className="bg-white/10 rounded px-2 py-1"
-                  >
-                    <option value="sphere">Esfera</option>
-                    <option value="box">Quadrado</option>
-                  </select>
-                </label>
-                <label className="flex flex-col">
-                  <span>Tamanho</span>
-                  <input
-                    type="range"
-                    min={0.1}
-                    max={0.6}
-                    step={0.05}
-                    value={hotspots.find(h => h.id === editingHotspotId)?.size || 0.2}
-                    onChange={e => setHotspots(prev => prev.map(h => h.id === editingHotspotId ? { ...h, size: parseFloat(e.target.value) } : h))}
-                  />
-                </label>
-                {/* Para quadrado, controle independente de largura/altura para formar retângulos */}
-                {hotspots.find(h => h.id === editingHotspotId)?.shape === 'box' && (
-                  <div className="col-span-2 grid grid-cols-2 gap-2">
-                    <label className="flex flex-col">
-                      <span>Largura</span>
-                      <input
-                        type="range"
-                        min={0.1}
-                        max={1.2}
-                        step={0.05}
-                        value={hotspots.find(h => h.id === editingHotspotId)?.sizeX ?? hotspots.find(h => h.id === editingHotspotId)?.size ?? 0.2}
-                        onChange={e => setHotspots(prev => prev.map(h => h.id === editingHotspotId ? { ...h, sizeX: parseFloat(e.target.value) } : h))}
-                      />
-                    </label>
-                    <label className="flex flex-col">
-                      <span>Altura</span>
-                      <input
-                        type="range"
-                        min={0.1}
-                        max={1.2}
-                        step={0.05}
-                        value={hotspots.find(h => h.id === editingHotspotId)?.sizeY ?? hotspots.find(h => h.id === editingHotspotId)?.size ?? 0.2}
-                        onChange={e => setHotspots(prev => prev.map(h => h.id === editingHotspotId ? { ...h, sizeY: parseFloat(e.target.value) } : h))}
-                      />
-                    </label>
-                  </div>
-                )}
-              </div>
-              <div className="max-h-56 overflow-auto space-y-2">
-                {files.filter(f => !/FINAL\.[a-zA-Z]+$/.test(f)).map(f => (
-                  <label key={f} className="flex items-center gap-2 text-xs">
-                    <input
-                      type="checkbox"
-                      checked={menuSelection[f] || false}
-                      onChange={e => setMenuSelection(prev => ({ ...prev, [f]: e.target.checked }))}
-                    />
-                    <span>{sanitizeLabel(f)}</span>
-                  </label>
-                ))}
-              </div>
-              <div className="mt-3 flex gap-2 justify-between">
-                <button onClick={() => {
-                  const id = editingHotspotId
-                  // remove referências e o próprio ponto
-                  setLightsState(prev => {
-                    const next = { ...prev }
-                    Object.keys(next).forEach(f => {
-                      next[f] = { ...next[f], pontos: (next[f]?.pontos || []).filter(pid => pid !== id) }
-                    })
-                    return next
-                  })
-                  setHotspots(prev => prev.filter(h => h.id !== id))
-                  setEditingHotspotId(null)
-                }} className="px-3 py-1 rounded-md bg-red-500/70 hover:bg-red-500 text-xs shadow-lg">
-                  <i className="bi bi-x-circle text-white mr-1" /> Apagar ponto
-                </button>
-                <button onClick={assignLightsToHotspot} className="px-3 py-1 rounded-md bg-white/15 hover:bg-white/25 text-xs">Confirmar</button>
-                <button onClick={() => setEditingHotspotId(null)} className="px-3 py-1 rounded-md bg-white/10 hover:bg-white/20 text-xs">Cancelar</button>
-              </div>
-            </div>
+      {debugClick && editingHotspotId && (
+        <HotspotEditor
+          hotspot={hotspots.find(h => h.id === editingHotspotId)}
+          files={lightFiles}
+          availableEnvs={availableEnvs}
+          finalImages={finalImages}
+          onUpdate={handleUpdateHotspot}
+          onDelete={handleDeleteHotspot}
+          onDuplicate={handleDuplicateHotspot}
+          onClose={() => setEditingHotspotId(null)}
+          isDrawing={isDrawing}
+          onToggleDrawing={() => setIsDrawing(!isDrawing)}
+        />
+      )}
+
+      {adjustmentsOpen && (
+        <div
+          ref={adjustmentsModalRef}
+          className="fixed z-[100] w-80 glass rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+          style={{ left: adjustmentsPos.x, top: adjustmentsPos.y, maxHeight: '80vh' }}
+          onPointerDown={(e) => {
+            // Permite arrastar clicando em qualquer lugar que não seja interativo (input/button)
+            if (['INPUT', 'BUTTON', 'I'].includes(e.target.tagName)) return
+            draggingAdjustRef.current = true
+            const rect = adjustmentsModalRef.current.getBoundingClientRect()
+            dragOffsetRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top }
+          }}
+        >
+          <div className="h-12 flex items-center justify-between px-4 border-b border-white/10 cursor-move bg-white/5">
+            <span className="text-sm font-medium text-white/90 text-shadow">Ajustes</span>
+            <button onClick={() => setAdjustmentsOpen(false)} className="w-6 h-6 rounded-full flex items-center justify-center text-white/40 hover:bg-white/10"><i className="bi bi-x"></i></button>
           </div>
-        </>
+          <div className="p-5 space-y-5 overflow-y-auto custom-scrollbar">
+            {Object.entries(adjustments).map(([k, v]) => {
+              let min = 0, max = 2, step = 0.05
+              if (k === 'temperature') { min = -40; max = 40; step = 1 }
+              if (k === 'bloomIntensity') { min = 0; max = 5; step = 0.1 }
+              if (k === 'bloomRadius') { min = 0; max = 2; step = 0.05 }
+
+              return (
+                <div key={k} className="space-y-2">
+                  <div className="flex justify-between text-xs">
+                    <span className="capitalize text-white/60 text-shadow">{adjustmentLabels[k] || k}</span>
+                    <span className="text-white/40">{v.toFixed(2)}</span>
+                  </div>
+                  <SliderBar value={v} min={min} max={max} step={step} onChange={(val) => setAdjustments(p => ({ ...p, [k]: val }))} />
+                </div>
+              )
+            })}
+            <button
+              onClick={() => setAdjustments({ saturation: 1, contrast: 1, brightness: 1, highlights: 0, denoise: 0, temperature: 0, bloomIntensity: 0, bloomRadius: 0 })}
+              className="w-full py-2 mt-2 text-xs font-medium text-red-200/80 bg-red-500/20 rounded-lg hover:bg-red-500/30 transition shadow-sm"
+              style={{ textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}
+            >
+              Resetar
+            </button>
+          </div>
+        </div>
       )}
     </div>
   )

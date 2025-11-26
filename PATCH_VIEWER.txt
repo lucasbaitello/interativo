@@ -1,0 +1,114 @@
+// Patch para adicionar ao Viewer.jsx - Cole estas linhas nos locais indicados
+
+// ============================================
+// 1. ADICIONAR APÓS OS IMPORTS EXISTENTES (linha 11)
+// ============================================
+import Portal from '../components/Portal'
+import EnvironmentSelector from '../components/EnvironmentSelector'
+import { useEnvironment } from '../hooks/useEnvironment'
+
+// ============================================
+// 2. ADICIONAR APÓS: const [hotspots, setHotspots] = useState([])
+// ============================================
+const [portals, setPortals] = useState([])
+const [editingPortalId, setEditingPortalId] = useState(null)
+const [isPortalMode, setIsPortalMode] = useState(false)
+
+// ============================================
+// 3. ADICIONAR APÓS: const [draggingHotspot, setDraggingHotspot] = useState(false)
+// ============================================
+// Sistema de ambientes
+const { currentEnv, envConfig, setCurrentEnv, environments } = useEnvironment()
+
+// ============================================
+// 4. MODIFICAR A LINHA: const baseUrl = '/img/luzes/'
+// ============================================
+const baseUrl = envConfig?.imgPath ? `${envConfig.imgPath}/` : '/img/luzes/'
+
+// ============================================
+// 5. NO useEffect QUE CARREGA PRESET, ADICIONAR APÓS: if (Array.isArray(preset.hotspots))
+// ============================================
+if (Array.isArray(preset.portals)) setPortals(preset.portals)
+
+// ============================================
+// 6. NO useEffect DE PERSISTÊNCIA, MODIFICAR O PAYLOAD PARA:
+// ============================================
+const payload = {
+  values,
+  lightsState,
+  hotspots,
+  portals,
+  debugClick,
+  showFinal,
+  daylightTargets,
+  adjustments
+}
+
+// ============================================
+// 7. ADICIONAR APÓS A FUNÇÃO addHotspot
+// ============================================
+// Adiciona portal na superfície da esfera
+const addPortal = (point) => {
+  const id = (self.crypto && self.crypto.randomUUID) ? self.crypto.randomUUID() : `${Date.now()}-${Math.floor(Math.random()*1e6)}`
+  const defaultEnv = environments.length > 1 ? environments.find(e => e.id !== currentEnv)?.id : environments[0]?.id
+  setPortals(prev => [...prev, { 
+    id, 
+    position: [point.x, point.y, point.z], 
+    targetEnvironment: defaultEnv || 'luzes',
+    label: 'Portal',
+    shape: 'sphere', 
+    size: 0.6 
+  }])
+  setEditingPortalId(id)
+}
+
+// Handler de clique em portal
+const onPortalClick = ({ targetEnvironment }) => {
+  if (!debugClick && targetEnvironment) {
+    setCurrentEnv(targetEnvironment)
+  }
+}
+
+// ============================================
+// 8. MODIFICAR onDoubleClick NA MESH DE PICKING PARA:
+// ============================================
+onDoubleClick={(e) => {
+  if (!debugClick) return
+  if (editingHotspotId || editingPortalId) return
+  if (isPortalMode) {
+    addPortal(e.point)
+  } else {
+    addHotspot(e.point)
+  }
+}}
+
+// ============================================
+// 9. ADICIONAR APÓS O MAP DE HOTSPOTS NO CANVAS:
+// ============================================
+{/* Portais */}
+{portals.map(p => (
+  <Portal
+    key={p.id}
+    id={p.id}
+    position={p.position}
+    targetEnvironment={p.targetEnvironment}
+    label={p.label}
+    shape={p.shape}
+    size={p.size}
+    debugMode={debugClick}
+    onPortalClick={onPortalClick}
+    onDragStart={() => setDraggingHotspot(true)}
+    onDragEnd={() => setDraggingHotspot(false)}
+  />
+))}
+
+// ============================================
+// 10. ADICIONAR NO INÍCIO DO JSX DE RETORNO (após <div ref={containerRef}>):
+// ============================================
+{/* Seletor de Ambientes */}
+<div className="absolute top-4 left-4 z-50">
+  <EnvironmentSelector 
+    currentEnvironment={currentEnv}
+    onEnvironmentChange={setCurrentEnv}
+  />
+</div>

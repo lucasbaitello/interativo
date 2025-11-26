@@ -1,0 +1,23 @@
+[
+  {
+    "id": "sala",
+    "name": "Sala",
+    "imgPath": "/img/sala",
+    "presetPath": "/presets/sala/viewerState.json",
+    "thumbnail": "/img/sala/FINAL.png"
+  },
+  {
+    "id": "varanda",
+    "name": "Varanda",
+    "imgPath": "/img/varanda",
+    "presetPath": "/presets/varanda/viewerState.json",
+    "thumbnail": "/img/varanda/FINAL.png"
+  },
+  {
+    "id": "home-theater",
+    "name": "Home Theater",
+    "imgPath": "/img/home-theater",
+    "presetPath": "/presets/home-theater/viewerState.json",
+    "thumbnail": "/img/home-theater/FINAL.png"
+  }
+]

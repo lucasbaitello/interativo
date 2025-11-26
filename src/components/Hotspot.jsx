@@ -1,17 +1,37 @@
 import * as THREE from 'three'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useMemo, useState } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
+import { Line } from '@react-three/drei'
 
-export default function Hotspot({ position = [0, 0, 0], debugActive = false, onClick, onMove, onDragStart, onDragEnd, shape = 'sphere', size = 0.2, sizeX, sizeY, radius = 10 }) {
+export default function Hotspot({
+  id,
+  position = [0, 0, 0],
+  debugActive = false,
+  onClick,
+  onDragStart,
+  onDragEnd,
+  onMove,
+  onPointUpdate, // Nova prop para atualizar pontos individuais
+  shape = 'sphere',
+  size = 0.2,
+  width = 1,
+  height = 1,
+  depth = 0.1,
+  rotation = 0,
+  color = '#3b82f6',
+  opacity = 0.6,
+  points = [] // Para polígonos
+}) {
   const draggingRef = useRef(false)
-  const meshRef = useRef()
+  const [draggingPointIndex, setDraggingPointIndex] = useState(null)
+  const groupRef = useRef()
   const { camera, gl } = useThree()
 
-  // Finaliza arraste se o mouse/ponteiro for liberado fora do mesh
   useEffect(() => {
     const endDrag = () => {
-      if (draggingRef.current) {
+      if (draggingRef.current || draggingPointIndex !== null) {
         draggingRef.current = false
+        setDraggingPointIndex(null)
         onDragEnd && onDragEnd()
       }
     }
@@ -23,89 +43,176 @@ export default function Hotspot({ position = [0, 0, 0], debugActive = false, onC
       window.removeEventListener('pointercancel', endDrag)
       window.removeEventListener('pointerleave', endDrag)
     }
-  }, [])
+  }, [onDragEnd, draggingPointIndex])
 
-  // Continua o arraste mesmo fora do mesh, seguindo até o mouseup
   useEffect(() => {
-    const onMove = (e) => {
-      if (!draggingRef.current) return
-      if (!(e.buttons & 1)) return // apenas com botão esquerdo pressionado
+    const onPointerMove = (e) => {
+      // Se não estiver arrastando nada, sai
+      if (!draggingRef.current && draggingPointIndex === null) return
+      if (!(e.buttons & 1)) return
+
       const canvas = gl?.domElement || document.querySelector('canvas')
       if (!canvas) return
       const rect = canvas.getBoundingClientRect()
       const x = ((e.clientX - rect.left) / rect.width) * 2 - 1
       const y = -(((e.clientY - rect.top) / rect.height) * 2 - 1)
+
       const raycaster = new THREE.Raycaster()
       raycaster.setFromCamera({ x, y }, camera)
+
+      const radius = 10
       const sphere = new THREE.Sphere(new THREE.Vector3(0, 0, 0), radius)
       const target = new THREE.Vector3()
       const hit = raycaster.ray.intersectSphere(sphere, target)
-      if (hit) {
-        onMove && onMove([hit.x, hit.y, hit.z])
+
+      const newPos = hit ? [hit.x, hit.y, hit.z] : [
+        raycaster.ray.direction.clone().normalize().multiplyScalar(radius).x,
+        raycaster.ray.direction.clone().normalize().multiplyScalar(radius).y,
+        raycaster.ray.direction.clone().normalize().multiplyScalar(radius).z
+      ]
+
+      if (draggingPointIndex !== null) {
+        // Arrastando um ponto específico do polígono
+        onPointUpdate && onPointUpdate(id, draggingPointIndex, newPos)
       } else {
-        const v = raycaster.ray.direction.clone().normalize().multiplyScalar(radius)
-        onMove && onMove([v.x, v.y, v.z])
+        // Arrastando o hotspot inteiro
+        onMove && onMove(newPos)
       }
     }
-    window.addEventListener('pointermove', onMove)
-    return () => window.removeEventListener('pointermove', onMove)
-  }, [camera, gl, radius, onMove])
+    window.addEventListener('pointermove', onPointerMove)
+    return () => window.removeEventListener('pointermove', onPointerMove)
+  }, [camera, gl, onMove, onPointUpdate, draggingPointIndex, id])
 
-  // Sempre olhar para a câmera em cada frame
   useFrame(() => {
-    if (meshRef.current) {
-      meshRef.current.lookAt(camera.position)
+    if (groupRef.current && shape !== 'polygon') {
+      groupRef.current.lookAt(camera.position)
     }
   })
 
+  // Geometria customizada para o polígono
+  const polygonGeometry = useMemo(() => {
+    if (shape !== 'polygon' || !points || points.length < 3) return null
+
+    // Criar geometria a partir dos pontos 3D
+    const geometry = new THREE.BufferGeometry()
+    const vertices = new Float32Array(points.flat())
+    geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3))
+
+    // Triangulação simples (Fan) assumindo convexidade ou ordem correta
+    const indices = []
+    for (let i = 1; i < points.length - 1; i++) {
+      indices.push(0, i, i + 1)
+    }
+    geometry.setIndex(indices)
+    geometry.computeVertexNormals()
+
+    return geometry
+  }, [shape, points])
+
+  // Linha de contorno para o polígono
+  const polygonLinePoints = useMemo(() => {
+    if (shape !== 'polygon' || !points) return []
+    if (points.length === 0) return []
+    return points.length > 2 ? [...points, points[0]] : points
+  }, [shape, points])
+
+  if (shape === 'polygon') {
+    return (
+      <group>
+        {/* Mesh preenchido para clique */}
+        {polygonGeometry && (
+          <mesh
+            geometry={polygonGeometry}
+            onClick={(e) => {
+              e.stopPropagation()
+              onClick && onClick()
+            }}
+            onPointerDown={(e) => {
+              if (!debugActive) return
+              e.stopPropagation()
+              // Desativado arrastar o polígono inteiro para evitar conflitos
+            }}
+            onPointerOver={() => (document.body.style.cursor = 'pointer')}
+            onPointerOut={() => { document.body.style.cursor = 'default' }}
+            renderOrder={2000}
+          >
+            <meshBasicMaterial
+              color={color}
+              transparent
+              opacity={debugActive ? 0.3 : 0}
+              side={THREE.DoubleSide}
+              depthTest={false}
+            />
+          </mesh>
+        )}
+
+        {/* Linha de contorno (apenas debug) */}
+        {debugActive && polygonLinePoints.length > 0 && (
+          <Line
+            points={polygonLinePoints}
+            color={color}
+            lineWidth={2}
+            depthTest={false}
+          />
+        )}
+
+        {/* Pontos de controle (apenas debug) */}
+        {debugActive && points.map((p, i) => (
+          <mesh
+            key={i}
+            position={p}
+            onPointerDown={(e) => {
+              if (!debugActive) return
+              e.stopPropagation()
+              setDraggingPointIndex(i)
+            }}
+            onPointerOver={() => (document.body.style.cursor = 'move')}
+            onPointerOut={() => (document.body.style.cursor = 'default')}
+          >
+            <sphereGeometry args={[0.08, 8, 8]} />
+            <meshBasicMaterial color={draggingPointIndex === i ? "#fbbf24" : "white"} depthTest={false} />
+          </mesh>
+        ))}
+      </group>
+    )
+  }
+
   return (
-    <mesh
-      ref={meshRef}
-      position={position}
-      onClick={onClick}
-      onPointerDown={(e) => {
-        if (!debugActive) return
-        draggingRef.current = true
-        e.stopPropagation()
-        onDragStart && onDragStart()
-      }}
-      onPointerUp={() => {
-        draggingRef.current = false
-        onDragEnd && onDragEnd()
-      }}
-      onPointerMove={(e) => {
-        // Move apenas enquanto clicado (botão esquerdo) e em modo debug
-        if (!debugActive || !draggingRef.current || !(e.buttons & 1)) return
-        e.stopPropagation()
-        // Usa interseção do raio do ponteiro com a esfera para um arraste mais suave
-        const sphere = new THREE.Sphere(new THREE.Vector3(0, 0, 0), radius)
-        const target = new THREE.Vector3()
-        const hit = e.ray?.intersectSphere(sphere, target)
-        if (hit) {
-          onMove && onMove([hit.x, hit.y, hit.z])
-        } else {
-          const p = e.point
-          const v = new THREE.Vector3(p.x, p.y, p.z)
-          if (v.lengthSq() > 0) v.normalize().multiplyScalar(radius)
-          onMove && onMove([v.x, v.y, v.z])
-        }
-      }}
-      onPointerOver={() => (document.body.style.cursor = 'pointer')}
-      onPointerOut={() => { document.body.style.cursor = 'default' }}
-      renderOrder={2000}
-    >
-      {shape === 'box' ? (
-        // Usa um plano para evitar distorções e garantir face para a câmera
-        <planeGeometry args={[sizeX ?? size, sizeY ?? size]} />
-      ) : (
-        <sphereGeometry args={[size, 16, 16]} />
+    <group ref={groupRef} position={position}>
+      <mesh
+        rotation={[0, 0, THREE.MathUtils.degToRad(rotation)]}
+        onClick={(e) => {
+          e.stopPropagation()
+          onClick && onClick()
+        }}
+        onPointerDown={(e) => {
+          if (!debugActive) return
+          e.stopPropagation()
+          draggingRef.current = true
+          onDragStart && onDragStart(id)
+        }}
+        onPointerOver={() => (document.body.style.cursor = 'pointer')}
+        onPointerOut={() => { document.body.style.cursor = 'default' }}
+        renderOrder={2000}
+      >
+        {shape === 'box' ? (
+          <boxGeometry args={[width, height, depth]} />
+        ) : (
+          <sphereGeometry args={[size, 32, 32]} />
+        )}
+        <meshBasicMaterial
+          color={color}
+          transparent
+          opacity={debugActive ? opacity : 0}
+          depthWrite={false}
+        />
+      </mesh>
+      {debugActive && (
+        <mesh>
+          <sphereGeometry args={[0.05, 16, 16]} />
+          <meshBasicMaterial color="white" />
+        </mesh>
       )}
-      <meshBasicMaterial
-        color={new THREE.Color('#3b82f6')}
-        transparent
-        opacity={debugActive ? 0.6 : 0}
-        depthWrite={false}
-      />
-    </mesh>
+    </group>
   )
 }
