@@ -26,7 +26,7 @@ export default function UserPanel({ open, onToggle, values, onChange, lightsStat
         className={
           open
             ? 'w-36 glass rounded-[70px] p-3 shadow-2xl shadow-black/40 text-shadow max-h-[70vh] overflow-y-auto scroll-thin transition-all duration-500 ease-in-out flex flex-col items-center'
-            : 'w-10 h-10 flex items-center justify-center cursor-pointer transition-all duration-300 opacity-40 hover:opacity-100 hover:bg-black/20 rounded-full'
+            : 'w-6 h-6 flex items-center justify-center cursor-pointer transition-all duration-300 opacity-40 hover:opacity-100 hover:bg-black/20 rounded-full'
         }
         onClick={!open ? onToggle : undefined}
       >

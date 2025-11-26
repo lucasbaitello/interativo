@@ -169,7 +169,7 @@ export default function Hotspot({
             onPointerOver={() => (document.body.style.cursor = 'move')}
             onPointerOut={() => (document.body.style.cursor = 'default')}
           >
-            <sphereGeometry args={[0.08, 8, 8]} />
+            <sphereGeometry args={[0.15, 16, 16]} />
             <meshBasicMaterial color={draggingPointIndex === i ? "#fbbf24" : "white"} depthTest={false} />
           </mesh>
         ))}

@@ -122,8 +122,7 @@ export default function Viewer() {
     highlights: 0,
     denoise: 0,
     temperature: 0,
-    bloomIntensity: 0,
-    bloomRadius: 0
+    bloomIntensity: 0
   })
   const [adjustmentsPos, setAdjustmentsPos] = useState(() => ({ x: 20, y: 20 }))
   const draggingAdjustRef = useRef(false)
@@ -474,6 +473,10 @@ export default function Viewer() {
   }
 
   const handleUpdateHotspot = (id, data) => {
+    // Se mudar para polígono, força a posição para 0,0,0 para que os pontos (que são world-space) fiquem corretos
+    if (data.shape === 'polygon') {
+      data.position = [0, 0, 0]
+    }
     setHotspots(prev => prev.map(h => h.id === id ? { ...h, ...data } : h))
   }
 
@@ -650,8 +653,7 @@ export default function Viewer() {
     highlights: 'Realces',
     denoise: 'Redução de Ruído',
     temperature: 'Temperatura de Cor',
-    bloomIntensity: 'Bloom Intensidade',
-    bloomRadius: 'Bloom Tamanho'
+    bloomIntensity: 'Bloom Intensidade'
   }
 
   return (
@@ -913,7 +915,6 @@ export default function Viewer() {
               let min = 0, max = 2, step = 0.05
               if (k === 'temperature') { min = -40; max = 40; step = 1 }
               if (k === 'bloomIntensity') { min = 0; max = 5; step = 0.1 }
-              if (k === 'bloomRadius') { min = 0; max = 2; step = 0.05 }
 
               return (
                 <div key={k} className="space-y-2">
@@ -926,7 +927,7 @@ export default function Viewer() {
               )
             })}
             <button
-              onClick={() => setAdjustments({ saturation: 1, contrast: 1, brightness: 1, highlights: 0, denoise: 0, temperature: 0, bloomIntensity: 0, bloomRadius: 0 })}
+              onClick={() => setAdjustments({ saturation: 1, contrast: 1, brightness: 1, highlights: 0, denoise: 0, temperature: 0, bloomIntensity: 0 })}
               className="w-full py-2 mt-2 text-xs font-medium text-red-200/80 bg-red-500/20 rounded-lg hover:bg-red-500/30 transition shadow-sm"
               style={{ textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}
             >
