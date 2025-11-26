@@ -1,0 +1,796 @@
+{
+  "values": {
+    "FINAL.png": 0,
+    "0 - Dome.png": 32,
+    "0 - reforco do sol.png": 30,
+    "0 -cortina.png": 32,
+    "1 - Luminria de chao.png": 42,
+    "2 - IES spot led duplo.png": 5,
+    "2 - spot led duplo.png": 100,
+    "2 - spot led single.png": 100,
+    "2 -IES spot led single.png": 38,
+    "3 - sanca cortina 2.png": 63,
+    "3 - sanka cortina.png": 76,
+    "4 - fita led - linear do hall.png": 83,
+    "4 - fita led - moldura.png": 45,
+    "4 - fita led - prateleira tv.png": 100,
+    "4 - fita led - prateleira varanda.png": 67,
+    "5 - luminaria de cabeceira.png": 100,
+    "FINAL_ai.png": 0,
+    "FINAL_caedira preta.png": 0,
+    "FINAL_mesa de centri.png": 0,
+    "FINAL_sofa roxo.png": 0,
+    "FINAL_teste-tv.png": 100,
+    "FINAL-mesa de centro.png": 100,
+    "__daylight": 32
+  },
+  "lightsState": {
+    "0 - Dome.png": {
+      "nome": "DOME",
+      "estado": true,
+      "dimmerizavel": false,
+      "valor": 50,
+      "pontos": []
+    },
+    "0 - reforco do sol.png": {
+      "nome": "REFORCO DO SOL",
+      "estado": true,
+      "dimmerizavel": true,
+      "valor": 30,
+      "pontos": []
+    },
+    "0 -cortina.png": {
+      "nome": "CORTINA",
+      "estado": true,
+      "dimmerizavel": false,
+      "valor": 50,
+      "pontos": []
+    },
+    "1 - Luminria de chao.png": {
+      "nome": "LUMINRIA DE CHAO",
+      "estado": true,
+      "dimmerizavel": false,
+      "valor": 47,
+      "pontos": [
+        "0cb91185-9484-4470-b8d5-8de3f2f75cab",
+        "0dccac5c-a5fb-4caf-8d03-54c3fa87d1d3"
+      ]
+    },
+    "2 - IES spot led duplo.png": {
+      "nome": "IES SPOT LED DUPLO",
+      "estado": true,
+      "dimmerizavel": false,
+      "valor": 8,
+      "pontos": [
+        "f533e552-4dc5-49d4-9e0a-ff42ef002c6f",
+        "c25d73cd-3969-4dc8-86b0-573c3664f8e7",
+        "3ccc043e-0ded-4450-8d64-a522d71f012b",
+        "00efd6b0-f816-4eea-b33e-1b129db45bc2",
+        "64839678-b373-4681-838e-d6636453a8cb"
+      ]
+    },
+    "2 - spot led duplo.png": {
+      "nome": "SPOT LED DUPLO",
+      "estado": true,
+      "dimmerizavel": false,
+      "valor": 100,
+      "pontos": [
+        "f533e552-4dc5-49d4-9e0a-ff42ef002c6f",
+        "c25d73cd-3969-4dc8-86b0-573c3664f8e7",
+        "3ccc043e-0ded-4450-8d64-a522d71f012b",
+        "00efd6b0-f816-4eea-b33e-1b129db45bc2",
+        "64839678-b373-4681-838e-d6636453a8cb"
+      ]
+    },
+    "2 - spot led single.png": {
+      "nome": "SPOT LED SINGLE",
+      "estado": true,
+      "dimmerizavel": false,
+      "valor": 100,
+      "pontos": [
+        "f533e552-4dc5-49d4-9e0a-ff42ef002c6f",
+        "c25d73cd-3969-4dc8-86b0-573c3664f8e7",
+        "3ccc043e-0ded-4450-8d64-a522d71f012b",
+        "00efd6b0-f816-4eea-b33e-1b129db45bc2",
+        "64839678-b373-4681-838e-d6636453a8cb"
+      ]
+    },
+    "2 -IES spot led single.png": {
+      "nome": "IES SPOT LED SINGLE",
+      "estado": true,
+      "dimmerizavel": false,
+      "valor": 29,
+      "pontos": [
+        "f533e552-4dc5-49d4-9e0a-ff42ef002c6f",
+        "c25d73cd-3969-4dc8-86b0-573c3664f8e7",
+        "3ccc043e-0ded-4450-8d64-a522d71f012b",
+        "00efd6b0-f816-4eea-b33e-1b129db45bc2",
+        "64839678-b373-4681-838e-d6636453a8cb"
+      ]
+    },
+    "3 - sanca cortina 2.png": {
+      "nome": "SANCA CORTINA 2",
+      "estado": true,
+      "dimmerizavel": false,
+      "valor": 50,
+      "pontos": [
+        "567d4cba-d870-49c1-ac20-c7dba8b9efe5"
+      ]
+    },
+    "3 - sanka cortina.png": {
+      "nome": "SANKA CORTINA",
+      "estado": true,
+      "dimmerizavel": false,
+      "valor": 50,
+      "pontos": [
+        "567d4cba-d870-49c1-ac20-c7dba8b9efe5"
+      ]
+    },
+    "4 - fita led - linear do hall.png": {
+      "nome": "FITA LED   LINEAR DO HALL",
+      "estado": true,
+      "dimmerizavel": false,
+      "valor": 66,
+      "pontos": [
+        "567d4cba-d870-49c1-ac20-c7dba8b9efe5"
+      ]
+    },
+    "4 - fita led - moldura.png": {
+      "nome": "FITA LED   MOLDURA",
+      "estado": true,
+      "dimmerizavel": false,
+      "valor": 54,
+      "pontos": [
+        "567d4cba-d870-49c1-ac20-c7dba8b9efe5"
+      ]
+    },
+    "4 - fita led - prateleira tv.png": {
+      "nome": "FITA LED   PRATELEIRA TV",
+      "estado": true,
+      "dimmerizavel": false,
+      "valor": 90,
+      "pontos": [
+        "567d4cba-d870-49c1-ac20-c7dba8b9efe5"
+      ]
+    },
+    "4 - fita led - prateleira varanda.png": {
+      "nome": "FITA LED   PRATELEIRA VARANDA",
+      "estado": true,
+      "dimmerizavel": false,
+      "valor": 84,
+      "pontos": [
+        "567d4cba-d870-49c1-ac20-c7dba8b9efe5"
+      ]
+    },
+    "5 - luminaria de cabeceira.png": {
+      "nome": "LUMINARIA DE CABECEIRA",
+      "estado": true,
+      "dimmerizavel": false,
+      "valor": 80,
+      "pontos": [
+        "0cb91185-9484-4470-b8d5-8de3f2f75cab",
+        "9ae18ba1-b20e-422e-916f-89ec35bf7b7d"
+      ]
+    }
+  },
+  "hotspots": [
+    {
+      "id": "2fb11b44-d49d-4eed-85d8-4b08bf3071d4",
+      "type": "swap",
+      "position": [
+        -7.8263632428156615,
+        -4.546806007196102,
+        -4.239880759026057
+      ],
+      "lights": [],
+      "shape": "polygon",
+      "size": 2,
+      "width": 1,
+      "height": 1,
+      "depth": 0.1,
+      "color": "#3b82f6",
+      "targetImage": "FINAL-mesa de centro.png",
+      "points": [
+        [
+          -8.71481229074066,
+          -4.164561004127021,
+          -2.5900730453136034
+        ],
+        [
+          -7.407037667098342,
+          -5.965845942403092,
+          -3.089413405437818
+        ],
+        [
+          -5.935352182597437,
+          -6.775891461684754,
+          -4.342682278040091
+        ],
+        [
+          -6.255515649288914,
+          -5.501057374114992,
+          -5.53234956670279
+        ],
+        [
+          -7.519592649076275,
+          -3.8920251655126923,
+          -5.303029562658184
+        ],
+        [
+          -8.530826841635813,
+          -2.946647472818094,
+          -4.284005383732323
+        ],
+        [
+          -8.869006910885739,
+          -3.4384684113800863,
+          -3.047686522223311
+        ]
+      ],
+      "targetImages": [
+        "FINAL-mesa de centro.png",
+        "FINAL.png"
+      ]
+    },
+    {
+      "id": "8c972e31-b42d-4ca6-b810-5bfe63d1c999",
+      "type": "swap",
+      "position": [
+        -3.8535509927946774,
+        -3.2438944811079216,
+        -8.6259212113743
+      ],
+      "lights": [],
+      "shape": "sphere",
+      "size": 1.5,
+      "width": 1,
+      "height": 1,
+      "depth": 0.1,
+      "color": "#3b82f6",
+      "targetImage": "FINAL_caedira preta.png",
+      "targetImages": [
+        "FINAL_caedira preta.png",
+        "FINAL.png"
+      ]
+    },
+    {
+      "id": "7894c456-533a-49bc-943a-cb2766c78682",
+      "type": "swap",
+      "position": [
+        -7.81939054153963,
+        -5.194177238398423,
+        3.425740223797123
+      ],
+      "lights": [],
+      "shape": "polygon",
+      "size": 2,
+      "width": 1,
+      "height": 1,
+      "depth": 0.1,
+      "color": "#3b82f6",
+      "targetImage": "FINAL_sofa roxo.png",
+      "points": [
+        [
+          -4.039349337578108,
+          -7.508899686186048,
+          5.211831686174045
+        ],
+        [
+          -5.3491434338760495,
+          -5.174129489354712,
+          6.672668021775547
+        ],
+        [
+          -9.59386699523483,
+          -1.6535495093493418,
+          2.227431299854743
+        ],
+        [
+          -9.653741567727696,
+          -2.2063283135304697,
+          1.2914552619344388
+        ],
+        [
+          -9.727146802477915,
+          -2.2515422690525364,
+          0.26859356083955205
+        ],
+        [
+          -9.449393543976626,
+          -3.247424620107876,
+          0.12572874522119054
+        ],
+        [
+          -4.691468527142575,
+          -8.808322875646219,
+          0.5915552812108775
+        ],
+        [
+          -3.843533415700742,
+          -7.685223574536515,
+          5.102875245809089
+        ]
+      ],
+      "targetImages": [
+        "FINAL_sofa roxo.png",
+        "FINAL.png"
+      ]
+    },
+    {
+      "id": "1ecd2fec-68a0-4522-b108-6ca9f9c4a631",
+      "type": "swap",
+      "position": [
+        4.3312458306701895,
+        -1.0243741021638242,
+        8.954940940794538
+      ],
+      "lights": [],
+      "shape": "polygon",
+      "size": 0.2,
+      "width": 6.1,
+      "height": 3.5,
+      "depth": 0.1,
+      "color": "#3b82f6",
+      "targetImage": "FINAL_teste-tv.png",
+      "points": [
+        [
+          7.278246858071284,
+          0.7337894539039013,
+          6.7978947490455175
+        ],
+        [
+          3.0983905353953736,
+          1.0049860099366072,
+          9.445109323762106
+        ],
+        [
+          2.9507543066805937,
+          -2.9082370267658817,
+          9.09359301640257
+        ],
+        [
+          7.144224271875204,
+          -2.199539986115646,
+          6.621535701680769
+        ]
+      ],
+      "targetImages": [
+        "FINAL_teste-tv.png",
+        "FINAL.png"
+      ]
+    },
+    {
+      "id": "2d6aefab-f6ae-4f19-b2bb-105661355a9e",
+      "type": "portal",
+      "position": [
+        -9.360040157236535,
+        -3.0385942059233844,
+        -1.7766804739874744
+      ],
+      "lights": [],
+      "shape": "sphere",
+      "size": 0.5,
+      "width": 1,
+      "height": 1,
+      "depth": 0.1,
+      "color": "#7d8ba1",
+      "points": [],
+      "scale": 2,
+      "icon": "caret-down-fill",
+      "targetEnvironment": "sala",
+      "opacity": 0.6
+    },
+    {
+      "id": "aa1aa45c-f723-461e-b616-d23e56cf429d",
+      "type": "portal",
+      "position": [
+        2.720647244842584,
+        -2.826900771890749,
+        -9.198190615279396
+      ],
+      "lights": [],
+      "shape": "sphere",
+      "size": 0.2,
+      "width": 1,
+      "height": 1,
+      "depth": 0.1,
+      "color": "#78808c",
+      "points": [],
+      "icon": "caret-down",
+      "scale": 2.2,
+      "opacity": 0.5,
+      "targetEnvironment": "varanda"
+    },
+    {
+      "id": "0df5a540-d064-4ccf-baaf-91931d6e0c7b",
+      "type": "switch",
+      "position": [
+        6.191202088885814,
+        1.7264858484901144,
+        7.652862862193462
+      ],
+      "lights": [
+        "4 - fita led - prateleira tv.png"
+      ],
+      "shape": "polygon",
+      "size": 0.2,
+      "width": 1,
+      "height": 1,
+      "depth": 0.1,
+      "color": "#3b82f6",
+      "points": [
+        [
+          8.193232436118048,
+          1.6014141081388622,
+          5.498985541357537
+        ],
+        [
+          2.580441671860634,
+          2.4752268327672935,
+          9.328644001070955
+        ],
+        [
+          2.6575239442300926,
+          1.3417716693841681,
+          9.535351093578104
+        ],
+        [
+          8.351830344517749,
+          0.9174373610734724,
+          5.409186838803465
+        ]
+      ]
+    },
+    {
+      "id": "dc789a27-ff99-46f2-850c-0a0c2715a811",
+      "type": "switch",
+      "position": [
+        6.801779916276676,
+        6.84350130301658,
+        2.627219040381984
+      ],
+      "lights": [
+        "2 - IES spot led duplo.png",
+        "2 - spot led duplo.png",
+        "2 - spot led single.png",
+        "2 -IES spot led single.png"
+      ],
+      "shape": "box",
+      "size": 0.7,
+      "width": 3,
+      "height": 1,
+      "depth": 0.1,
+      "color": "#3b82f6",
+      "points": [],
+      "rotation": -10
+    },
+    {
+      "id": "47f59d7c-624e-4f23-b818-868119f5a36c",
+      "type": "switch",
+      "position": [
+        -8.499105829480124,
+        3.6572598708904347,
+        -3.7933692591245896
+      ],
+      "lights": [
+        "2 - IES spot led duplo.png",
+        "2 - spot led duplo.png",
+        "2 - spot led single.png",
+        "2 -IES spot led single.png"
+      ],
+      "shape": "sphere",
+      "size": 0.5,
+      "width": 1.4,
+      "height": 1,
+      "depth": 0.1,
+      "color": "#3b82f6",
+      "points": [],
+      "rotation": -10
+    },
+    {
+      "id": "afb02ef1-eb15-41ae-952b-3971c129fc7e",
+      "type": "switch",
+      "position": [
+        -4.272390631366159,
+        4.001478879510914,
+        -8.107702823231918
+      ],
+      "lights": [
+        "2 - IES spot led duplo.png",
+        "2 - spot led duplo.png",
+        "2 - spot led single.png",
+        "2 -IES spot led single.png"
+      ],
+      "shape": "sphere",
+      "size": 0.4,
+      "width": 1.4,
+      "height": 1,
+      "depth": 0.1,
+      "color": "#3b82f6",
+      "points": [],
+      "rotation": -10
+    },
+    {
+      "id": "56f83722-5273-40ac-af3a-349038d498a0",
+      "type": "switch",
+      "position": [
+        -9.602987222661561,
+        1.903498787963796,
+        -2.039443248933191
+      ],
+      "lights": [
+        "2 - IES spot led duplo.png",
+        "2 - spot led duplo.png",
+        "2 - spot led single.png",
+        "2 -IES spot led single.png"
+      ],
+      "shape": "sphere",
+      "size": 0.3,
+      "width": 1.4,
+      "height": 1,
+      "depth": 0.1,
+      "color": "#3b82f6",
+      "points": [],
+      "rotation": -10
+    },
+    {
+      "id": "442770af-9fae-484e-b607-59afc0f83505",
+      "type": "switch",
+      "position": [
+        8.362004968087582,
+        0.05128813550241253,
+        -5.474326428805026
+      ],
+      "lights": [
+        "1 - Luminria de chao.png"
+      ],
+      "shape": "polygon",
+      "size": 0.2,
+      "width": 1,
+      "height": 1,
+      "depth": 0.1,
+      "color": "#3b82f6",
+      "points": [
+        [
+          7.91277995115746,
+          0.5850344583895889,
+          -6.065757221200672
+        ],
+        [
+          8.719107169960454,
+          0.6910525567576309,
+          -4.828866160301866
+        ],
+        [
+          8.74562160437716,
+          -0.5537640638702499,
+          -4.804304368903434
+        ],
+        [
+          8.421611146199306,
+          -0.49585317286709324,
+          -5.353182085214785
+        ],
+        [
+          8.172433995485603,
+          -2.537190036724964,
+          -5.15308557371999
+        ],
+        [
+          7.980008254979688,
+          -2.831117277245757,
+          -5.316099883072563
+        ],
+        [
+          8.201139017951977,
+          -0.5910629418634918,
+          -5.6762043997529315
+        ],
+        [
+          7.787945788523089,
+          -0.5786569610533686,
+          -6.246043268858291
+        ]
+      ]
+    },
+    {
+      "id": "256ff54f-0243-48f4-8846-3e3f0b2364a0",
+      "type": "switch",
+      "position": [
+        3.3077997666552807,
+        -3.2595936123475635,
+        8.842710048093984
+      ],
+      "lights": [
+        "2 - spot led duplo.png",
+        "2 - spot led single.png",
+        "2 - IES spot led duplo.png",
+        "2 -IES spot led single.png"
+      ],
+      "shape": "box",
+      "size": 0.2,
+      "width": 0.3,
+      "height": 0.2,
+      "depth": 0.1,
+      "color": "#3b82f6",
+      "points": []
+    },
+    {
+      "id": "92aa8387-c1e7-466b-a77d-bda8594c2f7f",
+      "type": "switch",
+      "position": [
+        3.2503008208111623,
+        -3.5567157670548184,
+        8.762723179846432
+      ],
+      "lights": [
+        "4 - fita led - prateleira varanda.png",
+        "4 - fita led - prateleira tv.png",
+        "4 - fita led - moldura.png",
+        "4 - fita led - linear do hall.png"
+      ],
+      "shape": "box",
+      "size": 0.2,
+      "width": 0.3,
+      "height": 0.2,
+      "depth": 0.1,
+      "color": "#3b82f6",
+      "points": []
+    },
+    {
+      "id": "61231399-d053-4de5-ab1a-ce46b8117747",
+      "type": "switch",
+      "position": [
+        2.937879694759138,
+        -3.5805558833095863,
+        8.862758174835815
+      ],
+      "lights": [
+        "3 - sanka cortina.png",
+        "3 - sanca cortina 2.png"
+      ],
+      "shape": "box",
+      "size": 0.2,
+      "width": 0.3,
+      "height": 0.2,
+      "depth": 0.1,
+      "color": "#3b82f6",
+      "points": []
+    },
+    {
+      "id": "b4e8fb1d-06e8-4cfc-ba19-bafce1298d9d",
+      "type": "switch",
+      "position": [
+        2.9766904482188323,
+        -3.274988683935854,
+        8.967372139906702
+      ],
+      "lights": [
+        "3 - sanka cortina.png",
+        "3 - sanca cortina 2.png",
+        "1 - Luminria de chao.png",
+        "5 - luminaria de cabeceira.png"
+      ],
+      "shape": "box",
+      "size": 0.2,
+      "width": 0.3,
+      "height": 0.2,
+      "depth": 0.1,
+      "color": "#3b82f6",
+      "points": []
+    },
+    {
+      "id": "2980879c-351a-4d3c-86fc-b5b0e5a17832",
+      "type": "switch",
+      "position": [
+        3.304911586636511,
+        4.632952212570787,
+        -8.222731492670254
+      ],
+      "lights": [
+        "3 - sanka cortina.png",
+        "3 - sanca cortina 2.png"
+      ],
+      "shape": "box",
+      "size": 0.2,
+      "width": 12.9,
+      "height": 1,
+      "depth": 0.1,
+      "color": "#3b82f6",
+      "points": [],
+      "rotation": -7
+    },
+    {
+      "id": "768503fe-1094-4ab5-a12a-a7f9f795a72d",
+      "type": "switch",
+      "position": [
+        -6.419832495130971,
+        2.7022668566080963,
+        -7.175200664102563
+      ],
+      "lights": [
+        "3 - sanka cortina.png",
+        "3 - sanca cortina 2.png"
+      ],
+      "shape": "box",
+      "size": 0.2,
+      "width": 9.2,
+      "height": 1,
+      "depth": 0.1,
+      "color": "#3b82f6",
+      "points": [],
+      "rotation": 12
+    },
+    {
+      "id": "5bf2f42d-d3fa-4923-a47f-70b1167f44c4",
+      "type": "switch",
+      "position": [
+        -9.65397346880186,
+        -1.6269539162798177,
+        2.0380915627055414
+      ],
+      "lights": [
+        "5 - luminaria de cabeceira.png"
+      ],
+      "shape": "sphere",
+      "size": 0.4,
+      "width": 1,
+      "height": 1,
+      "depth": 0.1,
+      "color": "#3b82f6",
+      "points": []
+    }
+  ],
+  "debugClick": false,
+  "daylightTargets": [
+    "0 - reforco do sol.png",
+    "0 -cortina.png",
+    "0 - Dome.png"
+  ],
+  "adjustments": {
+    "saturation": 1,
+    "contrast": 1,
+    "gamma": 1,
+    "brightness": 1,
+    "highlights": 0,
+    "denoise": 0
+  },
+  "camera": {
+    "position": [
+      -0.9869685292818295,
+      -0.09607322903201378,
+      -0.12908546342475063
+    ],
+    "target": [
+      0,
+      0,
+      0
+    ]
+  },
+  "layers": [
+    "0 - Dome.png",
+    "0 - reforco do sol.png",
+    "0 -cortina.png",
+    "1 - Luminria de chao.png",
+    "2 - IES spot led duplo.png",
+    "2 - spot led duplo.png",
+    "2 - spot led single.png",
+    "2 -IES spot led single.png",
+    "3 - sanca cortina 2.png",
+    "3 - sanka cortina.png",
+    "4 - fita led - linear do hall.png",
+    "4 - fita led - moldura.png",
+    "4 - fita led - prateleira tv.png",
+    "4 - fita led - prateleira varanda.png",
+    "5 - luminaria de cabeceira.png",
+    "FINAL.png",
+    "FINAL_ai.png",
+    "FINAL_mesa de centri.png",
+    "FINAL_caedira preta.png",
+    "FINAL_sofa roxo.png",
+    "FINAL_teste-tv.png",
+    "FINAL-mesa de centro.png"
+  ],
+  "allowLightAdjustment": true,
+  "viewMode": "final"
+}

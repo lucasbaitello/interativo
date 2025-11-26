@@ -1,0 +1,826 @@
+{
+  "values": {
+    "FINAL.png": 0,
+    "0 - cortina.png": 75,
+    "0 - dome.png": 75,
+    "0 - reforco do sol.png": 24,
+    "1 - luminaria de piso.png": 50,
+    "2 -IES spot led duplo.png": 50,
+    "2 -IES spot led single.png": 50,
+    "2 -spot led duplo.png": 100,
+    "2 -spot led single.png": 100,
+    "3 sanca cortina 2.png": 50,
+    "3 sanca cortina.png": 50,
+    "4 Fita led - linear do hall.png": 50,
+    "4 Fita led - moldura.png": 50,
+    "4 Fita led - prateleira da varanda.png": 50,
+    "5 -abajour davaranda.png": 50,
+    "FINAL_flores.png": 100,
+    "FINAL_poltrona.png": 0,
+    "FINAL_sofa.png": 0,
+    "FINAL_sofa2.png": 0,
+    "FINAL_sofa3.png": 0,
+    "FINAL_sofa4.png": 0,
+    "FINAL_sofa5.png": 0,
+    "FINAL_sofa6.png": 100,
+    "FINAL_sofa7.png": 0,
+    "FINAL_sofa8.png": 0,
+    "0 - Dome 2.png": 75,
+    "0 - Dome.png": 75,
+    "0 - reforco_do_sol.png": 50,
+    "1 - Luminária de chão.png": 50,
+    "2 - Fita Led TV.png": 75,
+    "3 - IES_Light_spot_led_duplo.png": 50,
+    "3 - pot_led_duplo.png": 50,
+    "3 - spot_led (2).png": 50,
+    "3 - spot_led.png": 50,
+    "4 - FIta led linear do hall.png": 75,
+    "5 - luminaria_de_cabeceira.png": 50,
+    "6 - Fita led prateleira_varanda.png": 50,
+    "7 Fita led Sanca da cortina .png": 75,
+    "8 - fita led sanca cortina 2.png": 75,
+    "9 - Fita led moldura.png": 75,
+    "__daylight": 75
+  },
+  "lightsState": {
+    "0 - cortina.png": {
+      "nome": "CORTINA",
+      "estado": true,
+      "dimmerizavel": false,
+      "valor": 50,
+      "pontos": []
+    },
+    "0 - dome.png": {
+      "nome": "DOME",
+      "estado": true,
+      "dimmerizavel": false,
+      "valor": 50,
+      "pontos": []
+    },
+    "0 - reforco do sol.png": {
+      "nome": "REFORCO DO SOL",
+      "estado": true,
+      "dimmerizavel": true,
+      "valor": 24,
+      "pontos": []
+    },
+    "1 - luminaria de piso.png": {
+      "nome": "LUMINARIA DE PISO",
+      "estado": true,
+      "dimmerizavel": false,
+      "valor": 50,
+      "pontos": []
+    },
+    "2 -IES spot led duplo.png": {
+      "nome": "IES SPOT LED DUPLO",
+      "estado": true,
+      "dimmerizavel": false,
+      "valor": 50,
+      "pontos": [
+        "844b3088-9973-4802-9268-f4f6fa2ae8e4",
+        "2db302bc-fce1-4ccf-9f96-e0ac8df502ed",
+        "e82ce5b0-51f6-4df6-beac-318223cfba64",
+        "2523bc4a-cbf0-489a-8da7-76d48123d1e2"
+      ]
+    },
+    "2 -IES spot led single.png": {
+      "nome": "IES SPOT LED SINGLE",
+      "estado": true,
+      "dimmerizavel": false,
+      "valor": 50,
+      "pontos": [
+        "844b3088-9973-4802-9268-f4f6fa2ae8e4",
+        "2db302bc-fce1-4ccf-9f96-e0ac8df502ed",
+        "e82ce5b0-51f6-4df6-beac-318223cfba64",
+        "2523bc4a-cbf0-489a-8da7-76d48123d1e2"
+      ]
+    },
+    "2 -spot led duplo.png": {
+      "nome": "SPOT LED DUPLO",
+      "estado": true,
+      "dimmerizavel": false,
+      "valor": 100,
+      "pontos": [
+        "844b3088-9973-4802-9268-f4f6fa2ae8e4",
+        "2db302bc-fce1-4ccf-9f96-e0ac8df502ed",
+        "e82ce5b0-51f6-4df6-beac-318223cfba64",
+        "2523bc4a-cbf0-489a-8da7-76d48123d1e2"
+      ]
+    },
+    "2 -spot led single.png": {
+      "nome": "SPOT LED SINGLE",
+      "estado": true,
+      "dimmerizavel": false,
+      "valor": 100,
+      "pontos": [
+        "844b3088-9973-4802-9268-f4f6fa2ae8e4",
+        "2db302bc-fce1-4ccf-9f96-e0ac8df502ed",
+        "e82ce5b0-51f6-4df6-beac-318223cfba64",
+        "2523bc4a-cbf0-489a-8da7-76d48123d1e2"
+      ]
+    },
+    "3 sanca cortina 2.png": {
+      "nome": "SANCA CORTINA 2",
+      "estado": true,
+      "dimmerizavel": false,
+      "valor": 50,
+      "pontos": []
+    },
+    "3 sanca cortina.png": {
+      "nome": "SANCA CORTINA",
+      "estado": true,
+      "dimmerizavel": false,
+      "valor": 50,
+      "pontos": []
+    },
+    "4 Fita led - linear do hall.png": {
+      "nome": "FITA LED   LINEAR DO HALL",
+      "estado": true,
+      "dimmerizavel": false,
+      "valor": 50,
+      "pontos": []
+    },
+    "4 Fita led - moldura.png": {
+      "nome": "FITA LED   MOLDURA",
+      "estado": true,
+      "dimmerizavel": false,
+      "valor": 50,
+      "pontos": []
+    },
+    "4 Fita led - prateleira da varanda.png": {
+      "nome": "FITA LED   PRATELEIRA DA VARANDA",
+      "estado": true,
+      "dimmerizavel": true,
+      "valor": 50,
+      "pontos": [
+        "a6781b65-97ea-42c1-8bce-fc9d36fa81da"
+      ]
+    },
+    "5 -abajour davaranda.png": {
+      "nome": "ABAJOUR DAVARANDA",
+      "estado": true,
+      "dimmerizavel": true,
+      "valor": 50,
+      "pontos": [
+        "e51faeff-02b4-4e34-ae85-307825ea3495"
+      ]
+    }
+  },
+  "hotspots": [
+    {
+      "id": "5e8015c4-63b5-4432-918b-0aef6720b7bc",
+      "position": [
+        8.342698122770805,
+        -2.1625976717417146,
+        -5.043326075076341
+      ],
+      "lights": [],
+      "shape": "sphere",
+      "size": 0.4,
+      "type": "nav",
+      "icon": "caret-down-fill",
+      "markerOpacity": 0,
+      "linkEnv": "Sala de Jantar"
+    },
+    {
+      "id": "ef76bcce-25a0-4c28-823f-a28305437bc6",
+      "position": [
+        -2.2639472266967267,
+        -1.8898630417613291,
+        -9.542500164882995
+      ],
+      "lights": [],
+      "shape": "sphere",
+      "size": 0.5,
+      "type": "nav",
+      "color": "#a1bfac",
+      "markerOpacity": 0.05,
+      "linkEnv": "Home Theater",
+      "icon": "caret-down"
+    },
+    {
+      "id": "e51faeff-02b4-4e34-ae85-307825ea3495",
+      "position": [
+        -8.630330428654526,
+        -0.5824269916385496,
+        -4.992548232018027
+      ],
+      "lights": [
+        "5 -abajour davaranda.png"
+      ],
+      "shape": "sphere",
+      "size": 0.55,
+      "type": "light"
+    },
+    {
+      "id": "844b3088-9973-4802-9268-f4f6fa2ae8e4",
+      "position": [
+        -6.186522429632867,
+        7.277988785896926,
+        -2.9593613263689256
+      ],
+      "lights": [
+        "2 -IES spot led duplo.png",
+        "2 -IES spot led single.png",
+        "2 -spot led duplo.png",
+        "2 -spot led single.png"
+      ],
+      "shape": "sphere",
+      "size": 0.3,
+      "type": "light"
+    },
+    {
+      "id": "2db302bc-fce1-4ccf-9f96-e0ac8df502ed",
+      "position": [
+        -8.96014245584219,
+        4.101048965917248,
+        -1.6567775175912998
+      ],
+      "lights": [
+        "2 -IES spot led duplo.png",
+        "2 -IES spot led single.png",
+        "2 -spot led duplo.png",
+        "2 -spot led single.png"
+      ],
+      "shape": "sphere",
+      "size": 0.3,
+      "type": "light"
+    },
+    {
+      "id": "e82ce5b0-51f6-4df6-beac-318223cfba64",
+      "position": [
+        1.7954198745381618,
+        8.902939742970743,
+        4.175394448361846
+      ],
+      "lights": [
+        "2 -IES spot led duplo.png",
+        "2 -IES spot led single.png",
+        "2 -spot led duplo.png",
+        "2 -spot led single.png"
+      ],
+      "shape": "sphere",
+      "size": 0.4,
+      "type": "light"
+    },
+    {
+      "id": "a6781b65-97ea-42c1-8bce-fc9d36fa81da",
+      "position": [
+        -9.87940558701806,
+        0.8646337349389435,
+        -1.2844274022310023
+      ],
+      "lights": [
+        "4 Fita led - prateleira da varanda.png"
+      ],
+      "shape": "box",
+      "size": 0.6,
+      "type": "light",
+      "sizeX": 1.2,
+      "sizeY": 0.4
+    },
+    {
+      "id": "2523bc4a-cbf0-489a-8da7-76d48123d1e2",
+      "position": [
+        8.920412635969178,
+        4.430330752081646,
+        -0.8461938739142646
+      ],
+      "lights": [
+        "2 -IES spot led duplo.png",
+        "2 -IES spot led single.png",
+        "2 -spot led duplo.png",
+        "2 -spot led single.png"
+      ],
+      "shape": "sphere",
+      "size": 0.3,
+      "type": "light"
+    },
+    {
+      "id": "32a6402c-2bba-4751-b36e-2a5304d711eb",
+      "type": "switch",
+      "position": [
+        -8.988552999966227,
+        4.03222969789684,
+        -1.672900532937271
+      ],
+      "lights": [
+        "2 -IES spot led single.png",
+        "2 -IES spot led duplo.png",
+        "2 -spot led duplo.png",
+        "2 -spot led single.png"
+      ],
+      "shape": "sphere",
+      "size": 0.3,
+      "width": 1,
+      "height": 1,
+      "depth": 0.1,
+      "color": "#3b82f6",
+      "points": []
+    },
+    {
+      "id": "013316d4-5376-440a-8002-47b06ec99a97",
+      "type": "switch",
+      "position": [
+        -6.305533364339074,
+        7.150419771291054,
+        -3.0185668926722093
+      ],
+      "lights": [
+        "2 -IES spot led single.png",
+        "2 -IES spot led duplo.png",
+        "2 -spot led duplo.png",
+        "2 -spot led single.png"
+      ],
+      "shape": "sphere",
+      "size": 0.6,
+      "width": 1,
+      "height": 1,
+      "depth": 0.1,
+      "color": "#3b82f6",
+      "points": []
+    },
+    {
+      "id": "c603ad51-4f65-461e-9568-b187abc9ed61",
+      "type": "switch",
+      "position": [
+        -9.366107744848458,
+        2.981083064231893,
+        1.8409697107881824
+      ],
+      "lights": [
+        "2 -IES spot led single.png",
+        "2 -IES spot led duplo.png",
+        "2 -spot led duplo.png",
+        "2 -spot led single.png"
+      ],
+      "shape": "sphere",
+      "size": 0.2,
+      "width": 1,
+      "height": 1,
+      "depth": 0.1,
+      "color": "#3b82f6",
+      "points": []
+    },
+    {
+      "id": "04f884c9-f559-4314-b8bc-4fc82022ec4d",
+      "type": "switch",
+      "position": [
+        -9.945902908477159,
+        0.7479879728280651,
+        -0.7207838286546873
+      ],
+      "lights": [
+        "4 Fita led - prateleira da varanda.png"
+      ],
+      "shape": "box",
+      "size": 0.2,
+      "width": 7.4,
+      "height": 1,
+      "depth": 0.1,
+      "color": "#3b82f6",
+      "points": []
+    },
+    {
+      "id": "629068b4-c0b5-49b0-9078-c1fd98f0ce03",
+      "type": "swap",
+      "position": [
+        -9.472712670308551,
+        -3.0741151859912432,
+        -0.8164849077862868
+      ],
+      "lights": [],
+      "shape": "polygon",
+      "size": 0.2,
+      "width": 1,
+      "height": 1,
+      "depth": 0.1,
+      "color": "#3b82f6",
+      "points": [
+        [
+          -9.121746604238954,
+          -3.943039526285858,
+          1.0441008379160641
+        ],
+        [
+          -7.837436026384022,
+          -3.605555800500413,
+          -5.03892939004743
+        ],
+        [
+          -8.402672980101693,
+          -1.4464284592960774,
+          -5.203645742892741
+        ],
+        [
+          -9.276446172426636,
+          -0.5507170451859893,
+          -3.6727652147575474
+        ],
+        [
+          -9.957189411913706,
+          -0.7255041593397882,
+          -0.2736407014124603
+        ],
+        [
+          -9.817760153982336,
+          -1.8276483462463122,
+          -0.23366330417059866
+        ],
+        [
+          -9.782132534872853,
+          -1.7726257470258118,
+          1.0269139334171662
+        ],
+        [
+          -9.189247662747597,
+          -3.7560208438746985,
+          1.125614871476867
+        ]
+      ],
+      "targetImages": [
+        "FINAL_sofa.png",
+        "FINAL.png",
+        "FINAL_sofa2.png",
+        "FINAL_sofa3.png",
+        "FINAL_sofa4.png",
+        "FINAL_sofa5.png",
+        "FINAL_sofa6.png",
+        "FINAL_sofa7.png",
+        "FINAL_sofa8.png"
+      ],
+      "targetImage": "FINAL_sofa.png"
+    },
+    {
+      "id": "4aef3323-9775-4ca4-afe7-c0c05fab74bc",
+      "type": "switch",
+      "position": [
+        1.7290424359115635,
+        8.901753260318138,
+        4.215353027592394
+      ],
+      "lights": [
+        "2 -IES spot led single.png",
+        "2 -IES spot led duplo.png",
+        "2 -spot led duplo.png",
+        "2 -spot led single.png"
+      ],
+      "shape": "sphere",
+      "size": 0.6,
+      "width": 1,
+      "height": 1,
+      "depth": 0.1,
+      "color": "#3b82f6",
+      "points": []
+    },
+    {
+      "id": "dd56ef24-318e-4bb3-a7a7-dd9fee6140b0",
+      "type": "switch",
+      "position": [
+        8.972330434980572,
+        4.346135676779775,
+        -0.7799943875076012
+      ],
+      "lights": [
+        "2 -IES spot led single.png",
+        "2 -IES spot led duplo.png",
+        "2 -spot led duplo.png",
+        "2 -spot led single.png"
+      ],
+      "shape": "sphere",
+      "size": 0.3,
+      "width": 1,
+      "height": 1,
+      "depth": 0.1,
+      "color": "#3b82f6",
+      "points": []
+    },
+    {
+      "id": "8b83dc9d-994a-4d6b-aade-ffd2b969f74f",
+      "type": "switch",
+      "position": [
+        9.54648484215598,
+        2.938111661122418,
+        -0.48179562603094483
+      ],
+      "lights": [
+        "2 -IES spot led single.png",
+        "2 -IES spot led duplo.png",
+        "2 -spot led duplo.png",
+        "2 -spot led single.png"
+      ],
+      "shape": "sphere",
+      "size": 0.3,
+      "width": 1,
+      "height": 1,
+      "depth": 0.1,
+      "color": "#3b82f6",
+      "points": []
+    },
+    {
+      "id": "9ad7b4dc-4ab6-4d37-86a6-48b94366bdaa",
+      "type": "swap",
+      "position": [
+        9.072770668780542,
+        -1.4550622664168735,
+        3.945583124528648
+      ],
+      "lights": [],
+      "shape": "box",
+      "size": 2,
+      "width": 10,
+      "height": 4.5,
+      "depth": 0.1,
+      "color": "#3b82f6",
+      "points": [],
+      "rotation": -28,
+      "targetImages": [
+        "FINAL_flores.png",
+        "FINAL.png"
+      ],
+      "targetImage": "FINAL_flores.png"
+    },
+    {
+      "id": "a9be1b6e-a5d9-4680-a9cc-e1d68567ff9a",
+      "type": "swap",
+      "position": [
+        0,
+        0,
+        0
+      ],
+      "lights": [],
+      "shape": "polygon",
+      "size": 0.2,
+      "width": 1,
+      "height": 1,
+      "depth": 0.1,
+      "color": "#3b82f6",
+      "points": [
+        [
+          -1.242604308588438,
+          0.05585872468443587,
+          -9.911534261593122
+        ],
+        [
+          2.5774345612155445,
+          0.06781729309466772,
+          -9.649200845075908
+        ],
+        [
+          2.7220808512664036,
+          -4.627770828195677,
+          -8.427522532029322
+        ],
+        [
+          1.7455905679122086,
+          -6.856034799690337,
+          -7.054296733713983
+        ],
+        [
+          0.8711267628028071,
+          -7.296858119206646,
+          -6.771147617452229
+        ],
+        [
+          -1.9479955907552782,
+          -3.6676939827111923,
+          -9.088012099859728
+        ]
+      ],
+      "targetImages": [
+        "FINAL_poltrona.png",
+        "FINAL.png"
+      ],
+      "targetImage": "FINAL_poltrona.png"
+    },
+    {
+      "id": "f26bb2a1-4878-4324-9c81-ad730fa17c8f",
+      "type": "swap",
+      "position": [
+        0,
+        0,
+        0
+      ],
+      "lights": [],
+      "shape": "polygon",
+      "size": 0.2,
+      "width": 1,
+      "height": 1,
+      "depth": 0.1,
+      "color": "#3b82f6",
+      "points": [
+        [
+          -2.053846251561883,
+          -3.770178302042564,
+          -9.020793048757223
+        ],
+        [
+          0.8719149094757148,
+          -7.455439381414937,
+          -6.597795580510836
+        ],
+        [
+          -5.168972520989041,
+          -7.722810244036502,
+          -3.6813530470612954
+        ],
+        [
+          -6.154689192839097,
+          -5.462008506110626,
+          -5.663860450137208
+        ],
+        [
+          -5.368553539268975,
+          -4.881564968969686,
+          -6.867113777862758
+        ],
+        [
+          -4.204582815474723,
+          -5.102814304188941,
+          -7.49303210303553
+        ],
+        [
+          -3.6269601962557685,
+          -3.761607972038102,
+          -8.520091880670762
+        ]
+      ],
+      "targetImages": [
+        "FINAL_poltrona.png",
+        "FINAL.png"
+      ],
+      "targetImage": "FINAL_poltrona.png"
+    },
+    {
+      "id": "2e58c293-d009-4a71-b470-7177ff046862",
+      "type": "portal",
+      "position": [
+        -3.281691969137373,
+        -2.485256276432228,
+        -9.099660445027107
+      ],
+      "lights": [],
+      "shape": "sphere",
+      "size": 0.2,
+      "width": 1,
+      "height": 1,
+      "depth": 0.1,
+      "color": "#737b87",
+      "points": [],
+      "scale": 2.3,
+      "icon": "caret-down",
+      "opacity": 0.6,
+      "targetEnvironment": "home-theater"
+    },
+    {
+      "id": "0d77d3e1-a585-42ce-9ca2-92fd2f263305",
+      "type": "portal",
+      "position": [
+        8.36787317872418,
+        -1.6839438160771552,
+        -5.209897473951288
+      ],
+      "lights": [],
+      "shape": "sphere",
+      "size": 0.2,
+      "width": 1,
+      "height": 1,
+      "depth": 0.1,
+      "color": "#747981",
+      "points": [],
+      "icon": "caret-down-fill",
+      "opacity": 0.7,
+      "scale": 2.2,
+      "targetEnvironment": "sala"
+    },
+    {
+      "id": "655c13b2-2fd1-4939-a2aa-b58beb307444",
+      "type": "switch",
+      "position": [
+        -8.62013132530389,
+        -0.47027343369990293,
+        -5.023686262357871
+      ],
+      "lights": [
+        "5 -abajour davaranda.png"
+      ],
+      "shape": "sphere",
+      "size": 0.8,
+      "width": 1,
+      "height": 1,
+      "depth": 0.1,
+      "color": "#3b82f6",
+      "points": []
+    },
+    {
+      "id": "1bdea0f9-1e9b-4925-a2d4-d98aca21abc8",
+      "type": "swap",
+      "position": [
+        3.513029113998734,
+        -3.575115128011705,
+        8.653160016182479
+      ],
+      "lights": [],
+      "shape": "box",
+      "size": 2,
+      "width": 10,
+      "height": 4.5,
+      "depth": 0.1,
+      "color": "#3b82f6",
+      "points": [],
+      "rotation": -28,
+      "targetImages": [
+        "FINAL_flores.png",
+        "FINAL.png"
+      ],
+      "targetImage": "FINAL_flores.png"
+    },
+    {
+      "id": "9b5fdf89-373f-462e-8a29-b6a11fe2b99d",
+      "type": "swap",
+      "position": [
+        6.50491850065666,
+        -5.003453523694286,
+        5.714148067389043
+      ],
+      "lights": [],
+      "shape": "box",
+      "size": 2,
+      "width": 10,
+      "height": 4.5,
+      "depth": 0.1,
+      "color": "#3b82f6",
+      "points": [],
+      "rotation": -28,
+      "targetImages": [
+        "FINAL_flores.png",
+        "FINAL.png"
+      ],
+      "targetImage": "FINAL_flores.png"
+    }
+  ],
+  "debugClick": false,
+  "daylightTargets": [
+    "0 - Dome.png",
+    "9 - Fita led moldura.png",
+    "0 - Dome 2.png",
+    "8 - fita led sanca cortina 2.png",
+    "7 Fita led Sanca da cortina .png",
+    "2 - Fita Led TV.png",
+    "4 - FIta led linear do hall.png",
+    "0 - reforco do sol.png",
+    "0 - cortina.png",
+    "0 - dome.png"
+  ],
+  "adjustments": {
+    "saturation": 1,
+    "contrast": 1,
+    "brightness": 1,
+    "highlights": 0,
+    "denoise": 0,
+    "temperature": 0,
+    "bloomIntensity": 0,
+    "bloomRadius": 0
+  },
+  "camera": {
+    "position": [
+      0.9955358690305105,
+      -0.06066564573447043,
+      0.07230499910735068
+    ],
+    "target": [
+      0,
+      0,
+      0
+    ]
+  },
+  "layers": [
+    "0 - cortina.png",
+    "0 - dome.png",
+    "0 - reforco do sol.png",
+    "1 - luminaria de piso.png",
+    "2 -IES spot led duplo.png",
+    "2 -IES spot led single.png",
+    "2 -spot led duplo.png",
+    "2 -spot led single.png",
+    "3 sanca cortina 2.png",
+    "3 sanca cortina.png",
+    "4 Fita led - linear do hall.png",
+    "4 Fita led - moldura.png",
+    "4 Fita led - prateleira da varanda.png",
+    "5 -abajour davaranda.png",
+    "FINAL.png",
+    "FINAL_sofa.png",
+    "FINAL_poltrona.png",
+    "FINAL_sofa2.png",
+    "FINAL_sofa3.png",
+    "FINAL_sofa4.png",
+    "FINAL_sofa5.png",
+    "FINAL_sofa6.png",
+    "FINAL_sofa7.png",
+    "FINAL_sofa8.png",
+    "FINAL_flores.png"
+  ],
+  "viewModePermission": "both",
+  "viewMode": "final"
+}
